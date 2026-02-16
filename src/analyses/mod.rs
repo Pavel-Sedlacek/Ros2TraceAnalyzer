@@ -97,10 +97,6 @@ impl Analyses {
         ) && let Some(path) = args.binary_bundle_path() {
             let store = BinarySQLStore::new(path.to_path_buf())?;
 
-            if let Some(a) = &self.message_latency_analysis {
-                a.write_to_binary(&store, "message_latencies")?;
-            }
-
             if let Some(a) = &self.callback_analysis {
                 a.write_to_binary(&store, "callback_duration")?;
             }
@@ -109,6 +105,7 @@ impl Analyses {
                 store.write("activation_delays", a.activation_delays())?;
                 store.write("publication_delays", a.publication_delays())?;
                 store.write("message_delays", a.messages_delays())?;
+                store.write("message_latencies", a.messages_latencies())?;
             }
         }
 

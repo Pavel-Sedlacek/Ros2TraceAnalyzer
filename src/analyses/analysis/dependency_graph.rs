@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::analyses::analysis::utils::DisplayDurationStats;
 use crate::events_common::Context;
+use crate::extract::{RosChannelCompleteName, RosInterfaceCompleteName};
 use crate::model::display::get_node_name_from_weak;
 use crate::model::{
     self, Callback, CallbackCaller, CallbackInstance, CallbackTrigger, Publisher, Service,
@@ -538,7 +539,7 @@ impl DependencyGraph {
 
     pub fn messages_delays(&self) -> Vec<MessagesDelayExport> {
         self.subscriber_nodes.iter().map(|(k, v)| {
-            let n = k.0.lock().unwrap();
+            let n: std::sync::MutexGuard<'_, Subscriber> = k.0.lock().unwrap();
 
             MessagesDelayExport { 
                 interface: format!("Subscriber({})", n.get_topic().to_string()),
@@ -546,6 +547,35 @@ impl DependencyGraph {
                     get_node_name_from_weak(&node_weak.get_weak())
                 }).unwrap_or("".to_owned()),
                 messages_delays: v.take_delay.clone()
+            }
+        }).collect()
+    }
+
+    pub fn messages_latencies(&self) -> Vec<MessagesLatenciesExport> {
+        self.edges.iter().map(|(e, data)| {
+            let source = match e.source() {
+                Node::Publisher(arc_mut_wrapper) => get_node_name_from_weak(&arc_mut_wrapper.0.lock().unwrap().get_node().unwrap().get_weak()),
+                Node::Subscriber(arc_mut_wrapper) => get_node_name_from_weak(&arc_mut_wrapper.0.lock().unwrap().get_node().unwrap().get_weak()),
+                Node::Service(arc_mut_wrapper) => get_node_name_from_weak(&arc_mut_wrapper.0.lock().unwrap().get_node().unwrap().get_weak()),
+                Node::Timer(arc_mut_wrapper) => get_node_name_from_weak(&arc_mut_wrapper.0.lock().unwrap().get_node().unwrap().get_weak()),
+                Node::Callback(arc_mut_wrapper) => get_node_name_from_weak(&arc_mut_wrapper.0.lock().unwrap().get_node().unwrap().get_weak()),
+            }.unwrap_or("Unknown".to_string());
+
+            let target = match e.target() {
+                Node::Publisher(arc_mut_wrapper) => get_node_name_from_weak(&arc_mut_wrapper.0.lock().unwrap().get_node().unwrap().get_weak()),
+                Node::Subscriber(arc_mut_wrapper) => get_node_name_from_weak(&arc_mut_wrapper.0.lock().unwrap().get_node().unwrap().get_weak()),
+                Node::Service(arc_mut_wrapper) => get_node_name_from_weak(&arc_mut_wrapper.0.lock().unwrap().get_node().unwrap().get_weak()),
+                Node::Timer(arc_mut_wrapper) => get_node_name_from_weak(&arc_mut_wrapper.0.lock().unwrap().get_node().unwrap().get_weak()),
+                Node::Callback(arc_mut_wrapper) => get_node_name_from_weak(&arc_mut_wrapper.0.lock().unwrap().get_node().unwrap().get_weak()),
+            }.unwrap_or("Unknown".to_string());
+
+            let identifier = get_node_topic_or_name(&e.source());
+
+            MessagesLatenciesExport { 
+                from_namespace: source, 
+                to_namespace: target, 
+                identifier, 
+                latencies: data.latencies.clone()
             }
         }).collect()
     }
@@ -572,6 +602,14 @@ pub struct MessagesDelayExport {
     pub interface: String,
     pub node: String,
     pub messages_delays: Vec<i64>
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+pub struct MessagesLatenciesExport {
+    pub from_namespace: String,
+    pub to_namespace: String,
+    pub identifier: String,
+    pub latencies: Vec<i64>
 }
 
 impl EventAnalysis for DependencyGraph {
@@ -877,47 +915,37 @@ fn process_edges(
     )
 }
 
-fn get_node_name_and_tooltip(
-    node: &Node,
-    analysis: &DependencyGraph,
-    ros_node_name: Known<&str>,
-) -> (String, String) {
+fn get_node_topic_or_name(
+    node: &Node
+) -> String {
+    match node {
+        Node::Publisher(arc_mut_wrapper) => arc_mut_wrapper.0.lock().unwrap().get_topic().to_string(),
+        Node::Subscriber(arc_mut_wrapper) => arc_mut_wrapper.0.lock().unwrap().get_topic().to_string(),
+        Node::Service(arc_mut_wrapper) => arc_mut_wrapper.0.lock().unwrap().get_name().to_string(),
+        Node::Timer(arc_mut_wrapper) => arc_mut_wrapper.0.lock().unwrap().get_period().to_string(),
+        Node::Callback(arc_mut_wrapper) => arc_mut_wrapper.0.lock().unwrap().get_caller().map(|v| v.get_caller_as_string().to_string()).unwrap_or("Unknown".to_string()),
+    }
+}
+
+fn get_node_name(node: &Node) -> String {
     match node {
         Node::Publisher(publisher_arc) => {
             let publisher = publisher_arc.0.lock().unwrap();
             let topic = publisher.get_topic().to_string();
             let name = format!("Publisher\n{topic}");
-            let tooltip = format!(
-                "Node: {ros_node_name}\nDelay between publications:\n{}",
-                DisplayDurationStats::with_newline(
-                    &analysis.publisher_nodes[publisher_arc].publication_delay
-                )
-            );
-            (name, tooltip)
+            name
         }
         Node::Subscriber(subscriber_arc) => {
             let subscriber = subscriber_arc.0.lock().unwrap();
             let topic = subscriber.get_topic().to_string();
             let name = format!("Subscriber\n{topic}");
-            let tooltip = format!(
-                "Node: {ros_node_name}\nDelay between messages:\n{}",
-                DisplayDurationStats::with_newline(
-                    &analysis.subscriber_nodes[subscriber_arc].take_delay
-                )
-            );
-            (name, tooltip)
+            name
         }
         Node::Timer(timer_arc) => {
             let timer = timer_arc.0.lock().unwrap();
             let period = timer.get_period().unwrap();
             let name = format!("Timer\n{}", DisplayDuration(period));
-            let tooltip = format!(
-                "Node: {ros_node_name}\nDelay between activations:\n{}",
-                DisplayDurationStats::with_newline(
-                    &analysis.timer_nodes[timer_arc].activation_delay
-                )
-            );
-            (name, tooltip)
+            name
         }
         Node::Callback(callback_arc) => {
             let callback = callback_arc.0.lock().unwrap();
@@ -925,22 +953,12 @@ fn get_node_name_and_tooltip(
                 "Callback\n{}",
                 Known::<&CallbackCaller>::from(callback.get_caller())
             );
-            let tooltip = format!(
-                "Node: {ros_node_name}\nDelay between activations:\n{}\nExecution duration:\n{}",
-                DisplayDurationStats::with_newline(
-                    &analysis.callback_nodes[callback_arc].activation_delay
-                ),
-                DisplayDurationStats::with_newline(
-                    &analysis.callback_nodes[callback_arc].durations
-                )
-            );
-            (name, tooltip)
+            name
         }
         Node::Service(service_arc) => {
             let service = service_arc.0.lock().unwrap();
             let name = format!("Service\n{}", service.get_name());
-            let tooltip = format!("Node: {ros_node_name}\nSee callback for details",);
-            (name, tooltip)
+            name
         }
     }
 }
@@ -974,23 +992,48 @@ impl std::fmt::Display for DisplayAsDot<'_> {
                             .get_full_name()
                             .map(ToString::to_string)
                     });
-            let (node_name, tooltip) =
-                get_node_name_and_tooltip(node, self.analysis, ros_node_name.as_deref());
+            let node_name = get_node_name(node);
 
             let graph_node = graph.add_node(&node_name, *id);
             graph_node.set_shape(NodeShape::Ellipse);
-            graph_node.set_attribute("tooltip", &tooltip);
+
+            let identifier = format!("r2ta://{}", serde_qs::to_string(&RosInterfaceCompleteName {
+                interface: node_name, namespace: ros_node_name.as_deref().to_string()
+            }).unwrap_or("Unknown".to_string()));
+
+            graph_node.set_attribute("tooltip", &identifier);
+            graph_node.set_attribute("URL", &identifier);
         }
 
         for edge in &self.edges {
             let graph_edge = graph.add_edge(edge.source, edge.target, "");
-            graph_edge.set_attribute(
-                "tooltip",
-                &format!(
-                    "Latency:\n{}",
-                    DisplayDurationStats::with_newline(&edge.latencies),
-                ),
+            
+            let from = self.node_to_id.iter().find(|&(_, v)| *v == edge.source).unwrap().0;
+            let to = self.node_to_id.iter().find(|&(_, v)| *v == edge.target).unwrap().0;
+            
+            let from_ros_node = self.graph_node_to_ros_node
+                .get(from)
+                .map(|n| n.0.lock().unwrap());
+
+            let from_name = from_ros_node
+                .map(|n| n.get_full_name().to_string())
+                .unwrap_or("Unknown".to_string());
+
+            let to_name = self.graph_node_to_ros_node
+                .get(to)
+                .map(|n| n.0.lock().unwrap().get_full_name().to_string())
+                .unwrap_or("Unknown".to_string());
+
+            let identifier = format!(
+                "r2ta-edge://{}", serde_qs::to_string(&RosChannelCompleteName {
+                    source_namespace: from_name,
+                    target_namespace: to_name,
+                    identifier: get_node_topic_or_name(from),
+                }).unwrap_or("Unknown".to_string())
             );
+
+            graph_edge.set_attribute("URL", &identifier);
+            graph_edge.set_attribute("tooltip", &identifier);
 
             if let Some((min_latency, max_latency)) = match edge.edge_type {
                 EdgeType::PublisherSubscriberCommunication => self.pub_sub_latency_range,

@@ -259,7 +259,7 @@ impl AnalysisOutput for MessageLatency {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MessageLatencyExport {
-    pub topic: String,
+    pub interface: String,
     pub source_node: String,
     pub target_node: String,
     pub latencies: Vec<i64>,
@@ -279,7 +279,7 @@ impl From<MessageLatencyStats> for MessageLatencyExport {
 
 
         Self {
-            topic: value.topic,
+            interface: value.topic,
             source_node,
             target_node,
             latencies: value.latencies,
