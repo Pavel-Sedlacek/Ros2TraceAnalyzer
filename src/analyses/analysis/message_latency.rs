@@ -251,39 +251,36 @@ impl AnalysisOutput for MessageLatency {
         let stats: Vec<MessageLatencyExport> = stats.into_iter().map(Into::into).collect();
         serde_json::to_writer(file, &stats)
     }
+
+    fn get_binary_output(&self) -> impl Serialize {
+        self.calculate_stats().into_iter().map(Into::<MessageLatencyExport>::into).collect::<Vec<_>>()
+    }  
 }
 
 #[derive(Debug, Serialize)]
 struct MessageLatencyExport {
     topic: String,
-    subscriber_node: String,
-    publisher_node: String,
+    subscriber: String,
+    publisher: String,
     latencies: Vec<i64>,
 }
 
 impl From<MessageLatencyStats> for MessageLatencyExport {
     fn from(value: MessageLatencyStats) -> Self {
-        let subscriber = value.subscriber.lock().unwrap();
-        let subscriber_node = subscriber
-            .get_node()
-            .map(|node| get_node_name_from_weak(&node.get_weak()).unwrap_or("Unknown".to_string()))
-            .unwrap_or("Unknown".to_string());
-        let publisher_node = value.publisher.as_ref().map_or_else(
-            || "Unknown".to_string(),
-            |p| {
-                let publisher = p.lock().unwrap().get_node();
-                publisher
-                    .map(|node| {
-                        get_node_name_from_weak(&node.get_weak()).unwrap_or("Unknown".to_string())
-                    })
-                    .unwrap_or("Unknown".to_string())
-            },
-        );
+        let subscriber = value.subscriber.lock().map( |s| {
+            format!("Subscriber({})", s.get_topic())
+        }).unwrap_or("Unknown".into());
+
+        let publisher = value.publisher
+            .map(|p| 
+                p.lock().map( |s| format!("Publisher({})", s.get_topic()))
+                    .unwrap_or("Unknown".into())
+            ).unwrap_or("Unknown".into());
 
         Self {
             topic: value.topic,
-            subscriber_node,
-            publisher_node,
+            subscriber,
+            publisher,
             latencies: value.latencies,
         }
     }
