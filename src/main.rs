@@ -10,6 +10,7 @@ mod raw_events;
 mod statistics;
 mod utils;
 mod visualization;
+mod extract;
 
 use std::ffi::CString;
 
@@ -17,6 +18,7 @@ use argsv2::{helpers::prepare_trace_paths, Args};
 
 use crate::argsv2::analysis_args::AnalysisArgs;
 use crate::argsv2::chart_args::ChartArgs;
+use crate::argsv2::extract_args::ExtractArgs;
 use crate::argsv2::viewer_args::ViewerArgs;
 
 fn run_analysis<L: clap_verbosity_flag::LogLevel>(
@@ -49,6 +51,23 @@ fn run_viewer(
     Ok(())
 }
 
+fn run_extract(
+    args: &ExtractArgs
+) -> color_eyre::eyre::Result<()> {
+    let source_file = args.input_path();
+    let output_file = args.output_path();
+
+    let (_extracted_property, data) = extract::extract(
+        source_file,
+        args.element_id(),
+        args.property()
+    )?;
+
+    data.export(output_file)?;
+
+    Ok(())
+}
+
 fn main() -> color_eyre::eyre::Result<()> {
     color_eyre::install()?;
 
@@ -62,5 +81,6 @@ fn main() -> color_eyre::eyre::Result<()> {
         argsv2::TracerCommand::Analyse(analysis_args) => run_analysis(&analysis_args, &args.verbose),
         argsv2::TracerCommand::Chart(chart_args) => run_charting(&chart_args),
         argsv2::TracerCommand::Viewer(viewer_args) => run_viewer(&viewer_args),
+        argsv2::TracerCommand::Extract(extract_args) => run_extract(&extract_args),
     }
 }
