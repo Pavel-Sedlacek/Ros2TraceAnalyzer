@@ -2,6 +2,10 @@ use std::path::PathBuf;
 use clap::{Args, Subcommand, ValueEnum, ValueHint};
 use derive_more::Display;
 
+use crate::argsv2::extract_args::AnalysisProperty;
+
+const DEFAULT_BUNDLE_NAME: &'static str = "binary_bundle.sqlite";
+
 #[derive(Debug, Clone, Args)]
 pub struct ChartArgs {
     /// Identifier of the element for which to draw the graph
@@ -36,8 +40,18 @@ impl ChartArgs {
         &self.element_id
     }
 
-    pub fn input_path(&self) -> &Option<PathBuf> {
-        &self.input_path
+
+    pub fn input_path(&self) -> PathBuf {
+        match &self.input_path {
+            Some(p) => {
+                if p.is_dir() {
+                    p.join(DEFAULT_BUNDLE_NAME)
+                } else {
+                    p.clone()
+                }
+            },
+            None => std::env::current_dir().unwrap().join(DEFAULT_BUNDLE_NAME)
+        }
     }
 
     pub fn output_path(&self) -> &Option<PathBuf> {
@@ -54,11 +68,11 @@ impl ChartArgs {
 }
 
 #[derive(Debug, Display, Args, Clone)]
-#[display("ChartOf {{ value: {value}, {plot} }}")]
+#[display("ChartOf {{ value: {property}, {plot} }}")]
 pub struct ChartRequest {
     /// The value to plot into the chart
     #[clap(long)]
-    pub value: ChartedValue,
+    pub property: AnalysisProperty,
 
     /// The type of chart to render the data as
     #[command(subcommand)]
@@ -73,6 +87,25 @@ pub struct ChartRequest {
     pub output_format: ChartOutputFormat
 }
 
+impl ChartRequest {
+    pub(crate) fn name_descriptor(&self) -> String {
+        let value = match self.property {
+            AnalysisProperty::CallbackDuration => "execution_timing",
+            AnalysisProperty::ActivationsDelay => "activations_delay",
+            AnalysisProperty::PublicationsDelay => "publication_delay",
+            AnalysisProperty::MessagesDelay => "message_delay",
+            AnalysisProperty::MessagesLatency => "latency",
+        };
+
+        let plot = match &self.plot {
+            ChartVariants::Histogram(hist_data) => format!("histogram_{}", hist_data.bins.unwrap_or(0)),
+            ChartVariants::Scatter => "scatter".to_owned(),
+        };
+
+        format!("{}_{}_{}", value, plot, self.size)
+    }
+}
+
 #[derive(Debug, Display, ValueEnum, Clone, Default)]
 pub enum ChartOutputFormat {
     #[default]
@@ -82,27 +115,6 @@ pub enum ChartOutputFormat {
     PNG
 }
 
-#[derive(Debug, Display, ValueEnum, Clone)]
-pub enum ChartedValue {
-    /// Callback execution durations
-    #[display("Callback execution time")]
-    CallbackDuration,
-    /// Delays between callback or timer activations
-    #[display("Delays between activations")]
-    ActivationsDelay,
-
-    /// Delays between publisher publications
-    #[display("Delay between publication")]
-    PublicationsDelay,
-
-    /// Delays between subscriber messages
-    #[display("Delay between")]
-    MessagesDelay,
-
-    /// Latency of a communication channel
-    #[display("Latency")]
-    MessagesLatency,
-}
 
 #[derive(Debug, Display, Subcommand, Clone)]
 pub enum ChartVariants {

@@ -21,6 +21,7 @@ pub struct RosChannelCompleteName {
     pub topic: String,
 }
 
+#[derive(Clone, Debug)]
 pub enum ChartableData {
     I64(Vec<i64>),
 }
