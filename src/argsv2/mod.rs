@@ -6,6 +6,7 @@ use clap_verbosity_flag::{Verbosity, WarnLevel};
 pub mod analysis_args;
 pub mod chart_args;
 pub mod viewer_args;
+pub mod extract_args;
 pub mod helpers;
 
 pub static CLI_ARGS: OnceLock<Args> = OnceLock::new();
@@ -53,10 +54,10 @@ pub enum TracerCommand {
     
     /// Start a .dot viewer capable of generating charts on demand
     Viewer(viewer_args::ViewerArgs),
+
+    /// Retreive data from SQL binary bundle for a specified node into JSON
+    Extract(extract_args::ExtractArgs),
 }
-
-
-
 
 #[cfg(test)]
 mod test {

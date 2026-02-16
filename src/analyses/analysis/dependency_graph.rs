@@ -494,7 +494,7 @@ impl DependencyGraph {
         let timers = self.timer_nodes.iter().map(|(k, v)| {
             let n = k.0.lock().unwrap();
             ActivationDelayExport {
-                topic: n.get_period().unwrap_or(0).to_string(),
+                interface: format!("Timer({})", n.get_period().unwrap_or(0).to_string()),
                 node: n.get_node().map_or(WeakKnown::Unknown, |node_weak| {
                     get_node_name_from_weak(&node_weak.get_weak())
                 }).unwrap_or("".to_owned()),
@@ -505,13 +505,13 @@ impl DependencyGraph {
         let callbacks = self.callback_nodes.iter().map(|(k, v)| {
             let n = k.0.lock().unwrap();
             ActivationDelayExport {
-                topic: match n.get_caller() {
+                interface: format!("Callback({})", match n.get_caller() {
                     Some(c) => match c {
                         CallbackCaller::Subscription(arc_weak) => format!("Subscriber(\"{}\")", arc_weak.get_arc().unwrap().lock().unwrap().get_topic()),
                         v => v.to_string()
                     },
                     None => todo!(),
-                },
+                }),
                 node: n.get_node().map_or(WeakKnown::Unknown, |node_weak| {
                     get_node_name_from_weak(&node_weak.get_weak())
                 }).unwrap_or("".to_owned()),
@@ -527,7 +527,7 @@ impl DependencyGraph {
             let n = k.0.lock().unwrap();
 
             PublicationDelayExport { 
-                topic: n.get_topic().to_string(),
+                interface: format!("Publisher({})", n.get_topic().to_string()),
                 node: n.get_node().map_or(WeakKnown::Unknown, |node_weak| {
                     get_node_name_from_weak(&node_weak.get_weak())
                 }).unwrap_or("".to_owned()),
@@ -541,7 +541,7 @@ impl DependencyGraph {
             let n = k.0.lock().unwrap();
 
             MessagesDelayExport { 
-                topic: n.get_topic().to_string(),
+                interface: format!("Subscriber({})", n.get_topic().to_string()),
                 node: n.get_node().map_or(WeakKnown::Unknown, |node_weak| {
                     get_node_name_from_weak(&node_weak.get_weak())
                 }).unwrap_or("".to_owned()),
@@ -553,7 +553,7 @@ impl DependencyGraph {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct ActivationDelayExport {
-    pub topic: String,
+    pub interface: String,
     pub node: String,
     pub activation_delays: Vec<i64>
 }
@@ -561,7 +561,7 @@ pub struct ActivationDelayExport {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct PublicationDelayExport {
-    pub topic: String,
+    pub interface: String,
     pub node: String,
     pub publication_delays: Vec<i64>
 }
@@ -569,7 +569,7 @@ pub struct PublicationDelayExport {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct MessagesDelayExport {
-    pub topic: String,
+    pub interface: String,
     pub node: String,
     pub messages_delays: Vec<i64>
 }
