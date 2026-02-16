@@ -4,7 +4,7 @@ use derive_more::Display;
 use serde::{Deserialize, Serialize, de::value::CharDeserializer};
 use thiserror::Error;
 
-use crate::{analyses::analysis::{MessageLatency, callback_duration::RecordExport, dependency_graph::{ActivationDelayExport, MessagesDelayExport, PublicationDelayExport}, message_latency::MessageLatencyExport}, argsv2::extract_args::AnalysisProperty, utils::binary_sql_store::{BinarySQLStore, BinarySQLStoreError}};
+use crate::{analyses::analysis::{MessageLatency, callback_duration::RecordExport, dependency_graph::{ActivationDelayExport, MessagesDelayExport, MessagesLatenciesExport, PublicationDelayExport}, message_latency::MessageLatencyExport}, argsv2::extract_args::AnalysisProperty, utils::binary_sql_store::{BinarySQLStore, BinarySQLStoreError}};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Display)]
 #[display("{namespace}::{interface}")]
@@ -14,11 +14,11 @@ pub struct RosInterfaceCompleteName {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Display)]
-#[display("{source_namespace}-({topic})>{target_namespace}")]
+#[display("{source_namespace}-({identifier})>{target_namespace}")]
 pub struct RosChannelCompleteName {
     pub source_namespace: String,
     pub target_namespace: String,
-    pub topic: String,
+    pub identifier: String,
 }
 
 #[derive(Clone, Debug)]
@@ -46,11 +46,11 @@ pub fn extract(
             let id: RosChannelCompleteName = serde_qs::from_str(&element_id)?;
 
             let f = store
-                .read::<Vec<MessageLatencyExport>>("message_latency")
+                .read::<Vec<MessagesLatenciesExport>>("message_latency")
                 .map_err(|e| DataExtractionError::SourceDataParseError(e))?;
 
             return f.into_iter()
-                .find(|l| l.source_node.eq(&id.source_namespace) && l.target_node.eq(&id.target_namespace) && l.topic.eq(&id.topic))
+                .find(|l| l.from_namespace.eq(&id.source_namespace) && l.to_namespace.eq(&id.target_namespace) && l.identifier.eq(&id.identifier))
                 .map(|l| ChartableData::I64(l.latencies))
                 .ok_or_else(|| DataExtractionError::NoSuchElement(id.to_string()))
                 .map(|v| ("message_latency".to_string(), v))
