@@ -4,7 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 
-use crate::analysis::utils::DisplayDurationStats;
+use crate::analyses::analysis::utils::DisplayDurationStats;
 use crate::model::display::get_node_name_from_weak;
 use crate::model::{Publisher, Subscriber, SubscriptionMessage};
 use crate::processed_events::{ros2, Event, FullEvent};

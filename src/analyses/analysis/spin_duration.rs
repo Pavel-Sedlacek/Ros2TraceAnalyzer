@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::analysis::utils::DisplayDurationStats;
+use crate::analyses::analysis::utils::DisplayDurationStats;
 use crate::model::Node;
 use crate::processed_events::{self, Event};
 use crate::utils::DurationDisplayImprecise;

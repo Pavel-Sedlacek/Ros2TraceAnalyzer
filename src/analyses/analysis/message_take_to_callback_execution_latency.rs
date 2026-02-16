@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use crate::analysis::utils::DisplayDurationStats;
+use crate::analyses::analysis::utils::DisplayDurationStats;
 use crate::model::display::DisplayCallbackSummary;
 use crate::model::{Callback, CallbackInstance, CallbackTrigger};
 use crate::processed_events::{ros2, Event, FullEvent};

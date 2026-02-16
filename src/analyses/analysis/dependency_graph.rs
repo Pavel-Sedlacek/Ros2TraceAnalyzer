@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::ops::Not;
 use std::sync::{Arc, Mutex};
 
-use crate::analysis::utils::DisplayDurationStats;
+use crate::analyses::analysis::utils::DisplayDurationStats;
 use crate::events_common::Context;
 use crate::model::{
     self, Callback, CallbackCaller, CallbackInstance, CallbackTrigger, Publisher, Service,
