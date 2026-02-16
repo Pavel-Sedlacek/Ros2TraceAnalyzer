@@ -54,6 +54,23 @@ impl MessageTakeToCallbackLatency {
             );
         }
     }
+
+    fn export_latencies(&self) -> Vec<ExportEntry> {
+        self.latencies
+            .iter()
+            .map(|(callback, latencies)| ExportEntry {
+                topic: callback
+                    .0
+                    .lock()
+                    .unwrap()
+                    .get_caller()
+                    .unwrap()
+                    .get_caller_as_string()
+                    .unwrap(),
+                latencies: latencies.clone(),
+            })
+            .collect()
+    }
 }
 
 impl EventAnalysis for MessageTakeToCallbackLatency {
@@ -72,7 +89,7 @@ impl EventAnalysis for MessageTakeToCallbackLatency {
     }
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct ExportEntry {
     topic: String,
     latencies: Vec<i64>,
@@ -80,22 +97,12 @@ struct ExportEntry {
 
 impl AnalysisOutput for MessageTakeToCallbackLatency {
     fn write_json(&self, file: &mut std::io::BufWriter<std::fs::File>) -> serde_json::Result<()> {
-        let latencies: Vec<ExportEntry> = self
-            .latencies
-            .iter()
-            .map(|(callback, latencies)| ExportEntry {
-                topic: callback
-                    .0
-                    .lock()
-                    .unwrap()
-                    .get_caller()
-                    .unwrap()
-                    .get_caller_as_string()
-                    .unwrap(),
-                latencies: latencies.clone(),
-            })
-            .collect();
-
-        serde_json::to_writer(file, &latencies)
+        serde_json::to_writer(file, &self.export_latencies())
     }
+    
+    fn get_binary_output(&self) -> impl serde::Serialize {
+        self.export_latencies()
+    }
+
+    
 }
