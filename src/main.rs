@@ -11,6 +11,7 @@ mod statistics;
 mod utils;
 mod visualization;
 mod extract;
+mod charting;
 
 use std::ffi::CString;
 
@@ -42,6 +43,35 @@ fn run_analysis<L: clap_verbosity_flag::LogLevel>(
 fn run_charting(
     args: &ChartArgs,
 ) -> color_eyre::eyre::Result<()> {
+    let explicit_name = format!("{}_{}.{}", 
+        args.element_id(),
+        args.chart().name_descriptor(),
+        args.chart().output_format
+    );
+
+    let outpuf_file = match args.output_path() {
+        Some(o) => if o.is_dir() {
+            o.join(&explicit_name)
+        } else { o.clone() },
+        None => { std::env::current_dir().unwrap().join(&explicit_name) },
+    };
+
+    if args.clean() || !outpuf_file.exists() {
+        let chart_data = extract::extract(
+            args.input_path(),
+            args.element_id(), 
+            &args.chart().property
+        )?.1;
+    
+        charting::render_chart(
+            &outpuf_file,
+            &chart_data,
+            args.chart()
+        )?;
+    }
+
+    println!("{}", outpuf_file.to_string_lossy());
+
     Ok(())
 }
 
