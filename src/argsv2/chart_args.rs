@@ -4,11 +4,14 @@ use derive_more::Display;
 
 #[derive(Debug, Clone, Args)]
 pub struct ChartArgs {
-    /// Full name of the node to raw the chart for
-    ///
-    /// The name should include the namespace and node's name
+    /// Identifier of the element for which to draw the graph
+    /// 
+    /// - For nodes (graphviz nodes) the namespace (ROS node), type (ROS interface) and parameters (ROS topic) need to be specified  
+    /// - For edges (graphviz edges) name (type + topic) of the source and target node should be provided
+    /// 
+    /// The expected format is URL encoded map
     #[clap(long, short = 'n')]
-    node: String,
+    element_id: String,
 
     /// The input path, either a file of the data or a folder containing the default named file with the necessary data
     #[clap(long, short = 'i', value_name = "INPUT", value_hint = ValueHint::AnyPath)]
@@ -29,8 +32,8 @@ pub struct ChartArgs {
 }
 
 impl ChartArgs {
-    pub fn node(&self) -> &str {
-        &self.node
+    pub fn element_id(&self) -> &str {
+        &self.element_id
     }
 
     pub fn input_path(&self) -> &Option<PathBuf> {
