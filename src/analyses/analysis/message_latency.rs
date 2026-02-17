@@ -176,6 +176,7 @@ impl MessageLatency {
             .collect()
     }
 
+    #[allow(unused)]
     pub(crate) fn print_stats(&self) {
         println!("Message latency statistics:");
         let mut stats = self.calculate_stats();

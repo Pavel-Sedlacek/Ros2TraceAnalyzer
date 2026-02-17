@@ -37,6 +37,7 @@ impl MessageTakeToCallbackLatency {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn print_stats(&self) {
         println!("Message take to callback execution latency statistics:");
         for (i, (callback, latencies)) in self.latencies.iter().enumerate() {

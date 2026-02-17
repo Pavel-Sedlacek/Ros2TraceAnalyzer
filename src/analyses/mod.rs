@@ -1,12 +1,15 @@
-use std::{ffi::{CStr, CString}, io::Write};
+use std::{ffi::CStr, io::Write};
 
 use color_eyre::eyre::Context;
 
-use crate::{analyses::{analysis::AnalysisOutputExt, event_iterator::get_buf_writer_for_path}, argsv2::analysis_args::AnalysisArgs, utils::binary_sql_store::BinarySQLStore};
+use crate::{
+    analyses::{analysis::AnalysisOutputExt, event_iterator::get_buf_writer_for_path},
+    argsv2::analysis_args::AnalysisArgs,
+    utils::binary_sql_store::BinarySQLStore,
+};
 
 pub mod analysis;
 pub mod event_iterator;
-
 
 #[derive(Default)]
 pub struct Analyses {
@@ -37,7 +40,7 @@ impl Analyses {
             .chain(option_to_dyn_iter(&mut self.dependency_graph))
             .chain(option_to_dyn_iter(&mut self.spin_duration_analysis))
     }
-    
+
     pub fn populate_from_args(&mut self, args: &crate::argsv2::analysis_args::AnalysisArgs) {
         if args.message_latency_enabled() {
             self.message_latency_analysis = Some(analysis::MessageLatency::new());
@@ -67,11 +70,11 @@ impl Analyses {
             self.spin_duration_analysis = Some(analysis::SpinDuration::new());
         }
     }
-    
+
     pub fn run<L: clap_verbosity_flag::LogLevel>(
         &mut self,
-        trace_paths: Vec<&CStr>,    
-        verbose: &clap_verbosity_flag::Verbosity<L>
+        trace_paths: Vec<&CStr>,
+        verbose: &clap_verbosity_flag::Verbosity<L>,
     ) -> color_eyre::eyre::Result<()> {
         let mut iter = event_iterator::ProcessedEventsIter::new(&trace_paths, verbose);
 
@@ -92,9 +95,11 @@ impl Analyses {
     }
 
     pub fn save_by_args(&self, args: &AnalysisArgs) -> color_eyre::eyre::Result<()> {
-        if args.output_format().contains(
-            &crate::argsv2::analysis_args::OutputFormat::Binary
-        ) && let Some(path) = args.binary_bundle_path() {
+        if args
+            .output_format()
+            .contains(&crate::argsv2::analysis_args::OutputFormat::Binary)
+            && let Some(path) = args.binary_bundle_path()
+        {
             let store = BinarySQLStore::new(path.to_path_buf())?;
 
             if let Some(a) = &self.callback_analysis {
@@ -109,9 +114,10 @@ impl Analyses {
             }
         }
 
-        if args.output_format().contains(
-            &crate::argsv2::analysis_args::OutputFormat::Dot
-        ) {
+        if args
+            .output_format()
+            .contains(&crate::argsv2::analysis_args::OutputFormat::Dot)
+        {
             if let Some(path) = args.dependency_graph_path() {
                 let analysis = self.dependency_graph.as_ref().unwrap();
                 let dot_output =
@@ -133,9 +139,10 @@ impl Analyses {
             }
         }
 
-        if args.output_format().contains(
-            &crate::argsv2::analysis_args::OutputFormat::Json
-        ) {
+        if args
+            .output_format()
+            .contains(&crate::argsv2::analysis_args::OutputFormat::Json)
+        {
             if let Some(path) = args.message_latency_path() {
                 let analysis = self.message_latency_analysis.as_ref().unwrap();
                 analysis.write_json_to_output_dir(&path)?;
@@ -160,10 +167,11 @@ impl Analyses {
                     .wrap_err("Failed to write spin duration stats")?;
             }
         }
-        
-        if args.output_format().contains(
-            &crate::argsv2::analysis_args::OutputFormat::Text
-        ) {
+
+        if args
+            .output_format()
+            .contains(&crate::argsv2::analysis_args::OutputFormat::Text)
+        {
             if let Some(path) = args.callback_publications_path() {
                 let analysis = self.callback_dependency_analysis.as_ref().unwrap();
                 let analysis = analysis.get_publication_in_callback_analysis();
@@ -204,5 +212,5 @@ impl Analyses {
         }
 
         Ok(())
-    } 
+    }
 }

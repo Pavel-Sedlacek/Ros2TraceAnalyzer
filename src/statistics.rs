@@ -23,6 +23,7 @@ impl<T: Ord> Sorted<T> {
     /// # Errors
     /// If the input vector is not sorted in ascending order,
     /// the function will return it back as `Err(values)`.
+    #[allow(unused)]
     pub fn from_sorted(values: Vec<T>) -> Result<Self, Vec<T>> {
         if values.is_sorted() {
             Ok(Self { values })

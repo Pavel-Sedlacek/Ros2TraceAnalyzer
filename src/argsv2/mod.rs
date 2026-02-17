@@ -34,6 +34,7 @@ impl Args {
         }
     }
 
+    #[allow(unused)]
     pub fn as_analysis_args(self) -> analysis_args::AnalysisArgs {
         match self.command {
             TracerCommand::Analyse(analysis_args) => analysis_args,

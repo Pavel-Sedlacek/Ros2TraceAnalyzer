@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use plotters::{chart::{self, ChartBuilder, ChartContext}, coord::{CoordTranslate, ranged1d::ValueFormatter}, prelude::{BitMapBackend, Cartesian2d, DrawingBackend, IntoDrawingArea, Ranged}};
+use plotters::{chart::{self, ChartBuilder, ChartContext}, coord::{ranged1d::ValueFormatter}, prelude::{BitMapBackend, Cartesian2d, DrawingBackend, IntoDrawingArea, Ranged}};
 use plotters_svg::SVGBackend;
 
 use crate::{argsv2::chart_args::{ChartRequest, ChartVariants}, charting::{axis_descriptor::{AxisBestFit, AxisDescriptor, AxisDescriptors, resolve_axis_descriptors}, charts::{ChartData, histogram::HistogramChart, scatter::ScatterChart}, error::ChartConstructionError}, extract::ChartableData};
@@ -66,7 +66,7 @@ pub fn render_chart(
 
         match &variant {
             ChartVariants::Histogram(histogram_data) => {
-              let d = HistogramChart::new(histogram_data, data, axis_description);
+              let d = HistogramChart::new(histogram_data, data, axis_description)?;
                 label_axis(
                     d.draw_into(&mut chart)?,
                     d.axis_fits(),
@@ -74,7 +74,7 @@ pub fn render_chart(
                 )?;
             },
             ChartVariants::Scatter => {
-                let d = ScatterChart::new(data, axis_description);
+                let d = ScatterChart::new(data, axis_description)?;
                 label_axis(
                     d.draw_into(&mut chart)?,
                     d.axis_fits(),

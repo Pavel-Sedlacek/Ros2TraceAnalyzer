@@ -55,8 +55,8 @@ impl AxisDescriptor {
 
     pub fn unit_name(&self) -> &str {
         match self.quantity {
-            AxisQuantity::Duration { base } => "",
-            AxisQuantity::SimpleSi { name, base } => name,
+            AxisQuantity::Duration { .. } => "",
+            AxisQuantity::SimpleSi { name, .. } => name,
         }
     }
 }
@@ -182,8 +182,8 @@ impl AxisBestFit {
 
     pub fn target_notion(&self) -> String {
         match &self {
-            AxisBestFit::Duration { base, target } => target.to_string(),
-            AxisBestFit::SimpleSi { base, target } => target.to_string(),
+            AxisBestFit::Duration { target, .. } => target.to_string(),
+            AxisBestFit::SimpleSi { target, .. } => target.to_string(),
         }
     }
 }

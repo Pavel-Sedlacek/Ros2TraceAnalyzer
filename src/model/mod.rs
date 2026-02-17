@@ -150,6 +150,7 @@ impl Node {
         self.full_name.as_ref().map(Name::get_full_name)
     }
 
+    #[allow(unused)]
     pub fn get_namespace(&self) -> Known<&str> {
         self.full_name.as_ref().map(Name::get_namespace)
     }
@@ -369,14 +370,17 @@ impl Subscriber {
         ret
     }
 
+    #[allow(unused)]
     pub fn get_rmw_handle(&self) -> Known<u64> {
         self.rmw_handle
     }
 
+    #[allow(unused)]
     pub fn get_rcl_handle(&self) -> Known<u64> {
         self.rcl_handle
     }
 
+    #[allow(unused)]
     pub fn get_rclcpp_handle(&self) -> Known<u64> {
         self.rclcpp_handle
     }
@@ -393,6 +397,7 @@ impl Subscriber {
         self.node.clone()
     }
 
+    #[allow(unused)]
     pub fn get_callback(&self) -> Known<Arc<Mutex<Callback>>> {
         self.callback.clone()
     }
@@ -511,6 +516,7 @@ impl Publisher {
         }
     }
 
+    #[allow(unused)]
     pub fn get_rmw_handle(&self) -> Known<u64> {
         self.rmw_handle
     }
@@ -960,14 +966,17 @@ impl Callback {
         self.running_instance.take()
     }
 
+    #[allow(unused)]
     pub fn is_timer_driven(&self) -> bool {
         matches!(self.caller, Known::Known(CallbackCaller::Timer(_)))
     }
 
+    #[allow(unused)]
     pub fn is_service_driven(&self) -> bool {
         matches!(self.caller, Known::Known(CallbackCaller::Service(_)))
     }
 
+    #[allow(unused)]
     pub fn is_subscription_driven(&self) -> bool {
         matches!(self.caller, Known::Known(CallbackCaller::Subscription(_)))
     }
@@ -976,6 +985,7 @@ impl Callback {
         self.caller.as_ref().map(Into::into)
     }
 
+    #[allow(unused)]
     pub fn get_name(&self) -> Option<&str> {
         self.name.as_deref().into()
     }
@@ -1002,6 +1012,7 @@ impl Callback {
         &self.hostname
     }
 
+    #[allow(unused)]
     pub fn mark_removed(&mut self) {
         assert!(self
             .get_caller()
@@ -1242,6 +1253,7 @@ impl SubscriptionMessage {
 }
 
 #[derive(Clone, PartialEq, Eq, Hash)]
+#[allow(unused)]
 pub enum Gid {
     DdsGid(DdsGid),
     RmwGid(RmwGid),
@@ -1414,6 +1426,7 @@ impl SpinInstance {
         self.wake_time = Known::Known(wake_time);
     }
 
+    #[allow(unused)]
     pub fn get_start_time(&self) -> Time {
         self.start_time
     }

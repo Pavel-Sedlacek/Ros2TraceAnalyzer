@@ -1,4 +1,3 @@
-
 use std::{ffi::CStr, fs::File, io::BufWriter, path::Path};
 
 use bt2_sys::message::BtMessageType;
@@ -59,6 +58,7 @@ impl<'a> ProcessedEventsIter<'a> {
         }
     }
 
+    #[allow(unused)]
     pub(crate) fn add_analysis(&mut self, analysis: &'a mut dyn analysis::EventAnalysis) {
         analysis.initialize();
         self.analyses.push(analysis);
@@ -100,6 +100,7 @@ impl<'a> ProcessedEventsIter<'a> {
         );
     }
 
+    #[allow(unused)]
     pub(crate) fn print_counters(&self) {
         println!(
             "Ros events:\n\

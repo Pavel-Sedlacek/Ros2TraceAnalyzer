@@ -39,6 +39,7 @@ impl Context {
         self.vtid
     }
 
+    #[allow(unused)]
     pub fn procname(&self) -> &str {
         &self.procname
     }
