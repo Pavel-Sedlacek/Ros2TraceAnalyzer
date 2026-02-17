@@ -17,6 +17,8 @@ impl SpinDuration {
         Self::default()
     }
 
+    #[allow(unused)]
+    #[allow(unused)]
     pub(crate) fn print_stats(&self) {
         println!("Spin duration statistics:");
         for (i, (node, durations)) in self.processing_durations.iter().enumerate() {

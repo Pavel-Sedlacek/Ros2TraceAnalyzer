@@ -5,9 +5,9 @@ use std::vec::Vec;
 
 use crate::argsv2::Args;
 use crate::events_common::Context;
-use crate::model::display::{get_node_name_from_weak, DisplayCallbackSummary};
+use crate::model::display::{DisplayCallbackSummary, get_node_name_from_weak};
 use crate::model::{Callback, CallbackInstance, Time};
-use crate::processed_events::{ros2, Event, FullEvent};
+use crate::processed_events::{Event, FullEvent, ros2};
 use crate::statistics::{Quantile, Sorted};
 use crate::utils::{DurationDisplayImprecise, WeakKnown};
 
@@ -134,6 +134,7 @@ impl CallbackDuration {
             .collect();
     }
 
+    #[allow(unused)]
     fn calculate_duration_summary(
         &self,
         callback: &ArcMutWrapper<Callback>,
@@ -188,6 +189,7 @@ impl CallbackDuration {
             .collect()
     }
 
+    #[allow(unused)]
     pub(crate) fn print_stats(&self) {
         println!("Callback duration statistics:");
         for (i, callback_arc) in self.execution_data.keys().enumerate() {
@@ -210,6 +212,7 @@ impl CallbackDuration {
         }
     }
 
+    #[allow(unused)]
     pub fn get_durations_for_callback(
         &self,
         callback: &ArcMutWrapper<Callback>,
@@ -219,6 +222,7 @@ impl CallbackDuration {
             .map(|data| data.iter().map(|data| data.duration).collect::<Vec<_>>())
     }
 
+    #[allow(unused)]
     pub fn get_all_durations(&self) -> HashMap<ArcMutWrapper<Callback>, Vec<i64>> {
         self.execution_data
             .iter()
@@ -287,7 +291,10 @@ impl AnalysisOutput for CallbackDuration {
     }
 
     fn get_binary_output(&self) -> impl Serialize {
-        self.get_records().iter().map(|v| RecordExport::from(v)).collect::<Vec<_>>()
+        self.get_records()
+            .iter()
+            .map(|v| RecordExport::from(v))
+            .collect::<Vec<_>>()
     }
 }
 
@@ -305,13 +312,17 @@ impl From<&Record> for RecordExport {
         Self {
             node: value.node.clone(),
 
-            caller: format!("Callback({}({}))", match value.caller_type.as_str() {
-                "Subscription" => "Subscriber",
-                v => v
-            }, match value.caller_type.as_str() {
-                "Timer" => value.caller_param.to_string(),
-                _ => format!("\"{}\"", value.caller_param.escape_default()),
-            }),
+            caller: format!(
+                "Callback({}({}))",
+                match value.caller_type.as_str() {
+                    "Subscription" => "Subscriber",
+                    v => v,
+                },
+                match value.caller_type.as_str() {
+                    "Timer" => value.caller_param.to_string(),
+                    _ => format!("\"{}\"", value.caller_param.escape_default()),
+                }
+            ),
 
             durations: value.durations.clone(),
             inter_arrival_times: value.inter_arrival_times.clone(),

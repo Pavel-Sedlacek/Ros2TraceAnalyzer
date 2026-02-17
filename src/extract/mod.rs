@@ -4,7 +4,7 @@ use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{analyses::analysis::{callback_duration::RecordExport, dependency_graph::{ActivationDelayExport, MessagesDelayExport, MessagesLatenciesExport, NodeType, PublicationDelayExport}, message_latency::MessageLatencyExport}, argsv2::extract_args::AnalysisProperty, utils::binary_sql_store::{BinarySQLStore, BinarySQLStoreError}};
+use crate::{analyses::analysis::{callback_duration::RecordExport, dependency_graph::{ActivationDelayExport, MessagesDelayExport, MessagesLatenciesExport, NodeType, PublicationDelayExport}}, argsv2::extract_args::AnalysisProperty, utils::binary_sql_store::{BinarySQLStore, BinarySQLStoreError}};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Display)]
 #[display("{namespace}::{interface}")]

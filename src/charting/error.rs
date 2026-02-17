@@ -1,5 +1,3 @@
-use crate::utils::binary_sql_store::{BinarySQLStoreError};
-
 /// # Chart Construction Error
 ///
 /// This is an exhaustive list of all errors and exceptions that can be produces during the process
@@ -10,9 +8,8 @@ pub enum ChartConstructionError {
     ///
     /// This error denotes that the requested chart type (histogram, scatter, etc...) can not be made
     /// from the data of the requested charted variable (executions, latencies, ...)
-    #[error(
-        "The requested chart type is not compatible with the values"
-    )]
+    #[error("The requested chart type is not compatible with the values")]
+    #[allow(unused)]
     IncompatibleNodeAndChartType,
 
     /// # Drawing Error
@@ -28,10 +25,9 @@ pub enum ChartConstructionError {
     #[error("Invalid coordinate system\n{0}")]
     InvalidCoordinateSystem(String),
 
-
     /// # Chart Series Error
     ///
     /// This error occurs during the embedment of a series into a chart
     #[error("The series cannot be inserted into the chart\n{0}")]
-    ChartSeriesError(String)
+    ChartSeriesError(String),
 }

@@ -2,9 +2,11 @@ use crate::argsv2::Args;
 use crate::statistics::Sorted;
 use crate::utils::DurationDisplayImprecise;
 
+#[allow(unused)]
 pub struct DisplayDurationStats<'a>(&'a [i64], &'a str);
 
 impl<'a> DisplayDurationStats<'a> {
+    #[allow(unused)]
     pub fn with_newline(slice: &'a [i64]) -> Self {
         Self(slice, "\n")
     }
@@ -17,6 +19,7 @@ impl<'a> DisplayDurationStats<'a> {
         Self(slice, separator)
     }
 
+    #[allow(unused)]
     pub(crate) fn print(&self) {
         println!("{self}");
     }
@@ -30,7 +33,7 @@ impl<'a> DisplayDurationStats<'a> {
         let variance = self
             .0
             .iter()
-            .map(|&x| (x - mean))
+            .map(|&x| x - mean)
             .map(|x| i128::from(x) * i128::from(x))
             .sum::<i128>()
             / (self.0.len() - 1) as i128;

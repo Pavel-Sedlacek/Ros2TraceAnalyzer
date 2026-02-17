@@ -22,6 +22,7 @@ pub struct PublicationInCallback {
 }
 
 impl PublicationInCallback {
+    #[allow(unused)]
     pub fn new() -> Self {
         Self::default()
     }

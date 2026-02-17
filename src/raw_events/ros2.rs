@@ -9,6 +9,7 @@ use super::FromBtEvent;
 pub const GID_SIZE: usize = 24;
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclInit {
     #[debug("{context_handle:#x}")]
     pub context_handle: u64,
@@ -207,6 +208,7 @@ pub struct CallbackEnd {
 }
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclLifecycleStateMachineInit {
     #[debug("{node_handle:#x}")]
     pub node_handle: u64,
@@ -215,6 +217,7 @@ pub struct RclLifecycleStateMachineInit {
 }
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclLifecycleTransition {
     #[debug("{state_machine:#x}")]
     pub state_machine: u64,
@@ -226,17 +229,20 @@ pub struct RclLifecycleTransition {
 pub struct RclCppExecutorGetNextReady;
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclCppExecutorWaitForWork {
     pub timeout: i64,
 }
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclCppExecutorExecute {
     #[debug("{handle:#x}")]
     pub handle: u64,
 }
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclCppIpbToSubscription {
     #[debug("{ipb:#x}")]
     pub ipb: u64,
@@ -245,6 +251,7 @@ pub struct RclCppIpbToSubscription {
 }
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclCppBufferToIpb {
     #[debug("{buffer:#x}")]
     pub buffer: u64,
@@ -253,6 +260,7 @@ pub struct RclCppBufferToIpb {
 }
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclCppConstructRingBuffer {
     #[debug("{buffer:#x}")]
     pub buffer: u64,
@@ -260,6 +268,7 @@ pub struct RclCppConstructRingBuffer {
 }
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclCppRingBufferEnqueue {
     #[debug("{buffer:#x}")]
     pub buffer: u64,
@@ -270,6 +279,7 @@ pub struct RclCppRingBufferEnqueue {
 }
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclCppRingBufferDequeue {
     #[debug("{buffer:#x}")]
     pub buffer: u64,
@@ -278,12 +288,14 @@ pub struct RclCppRingBufferDequeue {
 }
 
 #[derive(Debug, TryFromBtFieldConst, Clone)]
+#[allow(unused)]
 pub struct RclCppRingBufferClear {
     #[debug("{buffer:#x}")]
     pub buffer: u64,
 }
 
 #[derive(Debug, From, Clone)]
+#[allow(unused)]
 pub enum Event {
     RclInit(RclInit),
     RclNodeInit(RclNodeInit),

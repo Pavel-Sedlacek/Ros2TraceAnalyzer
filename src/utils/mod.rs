@@ -169,6 +169,7 @@ pub enum WeakKnown<T> {
     Dropped,
 }
 
+#[allow(unused)]
 impl<T> WeakKnown<T> {
     pub const fn new(value: T) -> Self {
         Self::Known(value)
@@ -435,6 +436,7 @@ impl std::fmt::Display for DisplayLargeDuration {
 ///
 /// Note: The display of years is assuming every year has 365 days.
 #[derive(Debug, Clone, Copy, From)]
+#[allow(unused)]
 pub struct DurationDisplayImprecise(pub i64);
 
 impl std::fmt::Display for DurationDisplayImprecise {
@@ -469,6 +471,7 @@ impl std::fmt::Display for DurationDisplayImprecise {
     }
 }
 
+#[allow(unused)]
 pub struct DebugOptionHex<'a, T>(pub &'a Option<T>);
 
 impl<T: std::fmt::LowerHex> std::fmt::Debug for DebugOptionHex<'_, T> {

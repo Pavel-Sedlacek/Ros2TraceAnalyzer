@@ -6,6 +6,7 @@ use plotters::{chart::{ChartBuilder, ChartContext}, coord::types::RangedCoordi64
 use crate::{argsv2::chart_args::HistogramData, charting::{axis_descriptor::{self, AxisBestFit, AxisDescriptors}, charts::{ChartData, resolve_axis_range}, error::ChartConstructionError}, extract::ChartableData};
 
 pub struct HistogramChart {
+    #[allow(unused)]
     bins: u64,
     bin_width: u64,
     x_range: (i64, i64),
@@ -15,9 +16,10 @@ pub struct HistogramChart {
 }
 
 impl HistogramChart {
-    pub fn new(histogram_data: &HistogramData, data: &ChartableData, axis_descriptor: &AxisDescriptors) -> Self {
+    pub fn new(histogram_data: &HistogramData, data: &ChartableData, axis_descriptor: &AxisDescriptors) -> Result<Self, ChartConstructionError> {
         let data = match data {
             ChartableData::I64(items) => items.clone(),
+            // _ => return Err(ChartConstructionError::IncompatibleNodeAndChartType),
         };
 
         // How many bins the data should be split into (this is how many bins will actuall render)
@@ -107,14 +109,14 @@ impl HistogramChart {
             axis_descriptor.y.quantity.to_best_fit(),
         ];
 
-        HistogramChart {
+        Ok(HistogramChart {
             bins: data_bins as u64,
             bin_width: bin_width as u64,
             x_range,
             y_range: (0, y_range.1),
             data,
             axis_fits
-         }
+        })
     }
 }
 

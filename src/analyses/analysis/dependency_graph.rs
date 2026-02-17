@@ -2,7 +2,6 @@ use std::collections::{HashMap, HashSet};
 use std::ops::Not;
 use std::sync::{Arc, Mutex};
 
-use crate::analyses::analysis::utils::DisplayDurationStats;
 use crate::events_common::Context;
 use crate::extract::{RosChannelCompleteName, RosInterfaceCompleteName};
 use crate::model::display::get_node_name_from_weak;
@@ -185,7 +184,7 @@ impl DependencyGraph {
         color: bool,
         thickness: bool,
         min_multiplier: f64,
-    ) -> DisplayAsDot {
+    ) -> DisplayAsDot<'_> {
         DisplayAsDot::new(self, color, thickness, min_multiplier)
     }
 }
@@ -741,6 +740,7 @@ pub struct DisplayAsDot<'a> {
     edges: Vec<DisplayAsDotEdge>,
     pub_sub_latency_range: Option<(i64, i64)>,
 
+    #[allow(unused)]
     analysis: &'a DependencyGraph,
 
     // Cli Arguments
@@ -1044,11 +1044,11 @@ impl std::fmt::Display for DisplayAsDot<'_> {
             graph_node.set_shape(NodeShape::Ellipse);
 
             let i_type = match node {
-                Node::Publisher(arc_mut_wrapper) => NodeType::Publisher,
-                Node::Subscriber(arc_mut_wrapper) => NodeType::Subscriber,
-                Node::Service(arc_mut_wrapper) => NodeType::Service,
-                Node::Timer(arc_mut_wrapper) => NodeType::Timer,
-                Node::Callback(arc_mut_wrapper) => NodeType::Callback,
+                Node::Publisher(..) => NodeType::Publisher,
+                Node::Subscriber(..) => NodeType::Subscriber,
+                Node::Service(..) => NodeType::Service,
+                Node::Timer(..) => NodeType::Timer,
+                Node::Callback(..) => NodeType::Callback,
             };
 
             let identifier = format!("r2ta-node://{}", serde_qs::to_string(&RosInterfaceCompleteName {
