@@ -30,6 +30,7 @@ pub struct RclNodeInit {
 pub struct RmwPublisherInit {
     #[debug("{rmw_publisher_handle:#x}")]
     pub rmw_publisher_handle: u64,
+    #[allow_padding]
     pub gid: [u8; GID_SIZE],
 }
 
@@ -80,6 +81,7 @@ pub struct RmwPublish {
 pub struct RmwSubscriptionInit {
     #[debug("{rmw_subscription_handle:#x}")]
     pub rmw_subscription_handle: u64,
+    #[allow_padding]
     pub gid: [u8; GID_SIZE],
 }
 
