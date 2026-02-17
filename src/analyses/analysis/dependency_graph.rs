@@ -59,6 +59,15 @@ pub enum Node {
     Callback(ArcMutWrapper<Callback>),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, derive_more::Display, serde::Serialize, serde::Deserialize)]
+pub enum NodeType {
+    Publisher,
+    Subscriber,
+    Service,
+    Timer,
+    Callback,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub struct PublisherNode {
     /// Time between two consecutive publications
@@ -963,6 +972,42 @@ fn get_node_name(node: &Node) -> String {
     }
 }
 
+fn get_node_name_compact(node: &Node) -> String {
+    match node {
+        Node::Publisher(publisher_arc) => {
+            let publisher = publisher_arc.0.lock().unwrap();
+            let topic = publisher.get_topic().to_string();
+            let name = format!("Publisher({topic})");
+            name
+        }
+        Node::Subscriber(subscriber_arc) => {
+            let subscriber = subscriber_arc.0.lock().unwrap();
+            let topic = subscriber.get_topic().to_string();
+            let name = format!("Subscriber({topic})");
+            name
+        }
+        Node::Timer(timer_arc) => {
+            let timer = timer_arc.0.lock().unwrap();
+            let period = timer.get_period().unwrap();
+            let name = format!("Timer({})", period);
+            name
+        }
+        Node::Callback(callback_arc) => {
+            let callback = callback_arc.0.lock().unwrap();
+            let name = format!(
+                "Callback({})",
+                Known::<&CallbackCaller>::from(callback.get_caller())
+            );
+            name
+        }
+        Node::Service(service_arc) => {
+            let service = service_arc.0.lock().unwrap();
+            let name = format!("Service({})", service.get_name());
+            name
+        }
+    }
+}
+
 impl std::fmt::Display for DisplayAsDot<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let cluster_names = self
@@ -993,12 +1038,23 @@ impl std::fmt::Display for DisplayAsDot<'_> {
                             .map(ToString::to_string)
                     });
             let node_name = get_node_name(node);
+            let node_compact_name = get_node_name_compact(node);
 
             let graph_node = graph.add_node(&node_name, *id);
             graph_node.set_shape(NodeShape::Ellipse);
 
-            let identifier = format!("r2ta://{}", serde_qs::to_string(&RosInterfaceCompleteName {
-                interface: node_name, namespace: ros_node_name.as_deref().to_string()
+            let i_type = match node {
+                Node::Publisher(arc_mut_wrapper) => NodeType::Publisher,
+                Node::Subscriber(arc_mut_wrapper) => NodeType::Subscriber,
+                Node::Service(arc_mut_wrapper) => NodeType::Service,
+                Node::Timer(arc_mut_wrapper) => NodeType::Timer,
+                Node::Callback(arc_mut_wrapper) => NodeType::Callback,
+            };
+
+            let identifier = format!("r2ta-node://{}", serde_qs::to_string(&RosInterfaceCompleteName {
+                interface: node_compact_name,
+                namespace: ros_node_name.as_deref().to_string(),
+                interface_type: i_type
             }).unwrap_or("Unknown".to_string()));
 
             graph_node.set_attribute("tooltip", &identifier);

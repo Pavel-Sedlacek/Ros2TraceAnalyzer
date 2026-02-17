@@ -14,9 +14,11 @@ pub struct ExtractArgs {
     /// - For edges (graphviz edges) name (type + topic) of the source and target node should be provided
     /// 
     /// The expected format is URL encoded map
+    #[clap(long, short = 'e')]
     element_id: String,
 
     /// The property to extract from the node
+    #[clap(long, short = 'p')]
     property: AnalysisProperty,
 
     /// The input path, either a file of the data or a folder containing the default named file with the necessary data

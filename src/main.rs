@@ -13,6 +13,7 @@ mod visualization;
 mod extract;
 mod charting;
 
+use std::env::current_dir;
 use std::ffi::CString;
 
 use argsv2::{helpers::prepare_trace_paths, Args};
@@ -47,7 +48,7 @@ fn run_charting(
         args.element_id(),
         args.chart().name_descriptor(),
         args.chart().output_format
-    );
+    ).replace("/", "_");
 
     let outpuf_file = match args.output_path() {
         Some(o) => if o.is_dir() {
@@ -78,6 +79,26 @@ fn run_charting(
 fn run_viewer(
     args: &ViewerArgs
 ) -> color_eyre::eyre::Result<()> {
+    let viewer = args.xdot.clone().unwrap_or("xdot".to_owned());
+
+    let tracer = args.tracer_exec.clone().unwrap_or("Ros2TraceAnalyzer".to_owned());
+
+    let data_dir = args.data.clone().unwrap_or(current_dir()?).to_string_lossy().to_string();
+
+    let dotfile = args.dotfile.to_string_lossy().to_string();
+    
+    let mut cmd = if args.xdot.is_none() {
+        std::process::Command::new(viewer)
+    } else {
+        let mut cmd = std::process::Command::new("python");
+        cmd.arg(viewer);
+        cmd
+    };
+    
+    cmd.args([dotfile, tracer, data_dir]);
+
+    cmd.status()?;
+
     Ok(())
 }
 

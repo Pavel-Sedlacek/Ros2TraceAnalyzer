@@ -24,8 +24,8 @@ impl HistogramChart {
         let data_bins = if let Some(bins) = histogram_data.bins {
             bins as u64
         } else {
-            50
-            // TODO
+            // Sturges formula
+            data.len().ilog2() as u64 + 1
         };
 
         let (min, max) = match data.iter().minmax() {
