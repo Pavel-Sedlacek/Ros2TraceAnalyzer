@@ -10,9 +10,8 @@ pub trait ChartData<C: CoordTranslate> {
     fn draw_into<'a, B: DrawingBackend>(&self, canvas: &mut ChartBuilder<B>) -> Result<ChartContext<'a, B, C>, ChartConstructionError> ;
 }
 
-
 pub fn resolve_axis_range(
     data: &[i64],
 ) -> (i64, i64) {
-    return (*data.iter().min().unwrap(), *data.iter().max().unwrap())
+    return (*data.iter().min().unwrap_or(&0), *data.iter().max().unwrap_or(&0))
 }

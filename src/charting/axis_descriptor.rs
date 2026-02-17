@@ -34,7 +34,7 @@ impl AxisDescriptor {
                     target: *DurationUnit::all()
                         .iter()
                         .map(|d| (d, d.express_value(value, *base)))
-                        .find_or_last(|&(_, d)| d > 0.1 && d <= 10.)
+                        .find_or_last(|&(_, d)| d >= 1. && d < 1000.0)
                         .unwrap().0
                 }
             },
@@ -53,6 +53,12 @@ impl AxisDescriptor {
         }
     }
 
+    pub fn unit_name(&self) -> &str {
+        match self.quantity {
+            AxisQuantity::Duration { base } => "",
+            AxisQuantity::SimpleSi { name, base } => name,
+        }
+    }
 }
 
 #[derive(Debug, Copy, Display, Clone, PartialEq, PartialOrd)]
@@ -172,7 +178,14 @@ impl AxisBestFit {
                 target.express_value(value, *base)
             },
         }
-    } 
+    }
+
+    pub fn target_notion(&self) -> String {
+        match &self {
+            AxisBestFit::Duration { base, target } => target.to_string(),
+            AxisBestFit::SimpleSi { base, target } => target.to_string(),
+        }
+    }
 }
 
 pub const fn resolve_axis_descriptors(charted_value: &AnalysisProperty, chart_variant: &ChartVariants) -> AxisDescriptors {
@@ -200,7 +213,10 @@ pub const fn resolve_axis_descriptors(charted_value: &AnalysisProperty, chart_va
                 x: AxisDescriptor { label: "Delay", quantity: AxisQuantity::Duration { base: DurationUnit::Nanosecond } }, 
                 y: AxisDescriptor { label: "Messages", quantity: AxisQuantity::SimpleSi { name: "", base: SiPrefix::Base } }
             },
-            AnalysisProperty::MessagesLatency => todo!(),
+            AnalysisProperty::MessagesLatency => AxisDescriptors {
+                x: AxisDescriptor { label: "Latency", quantity: AxisQuantity::Duration { base: DurationUnit::Nanosecond } },
+                y: AxisDescriptor { label: "Messages", quantity: AxisQuantity::SimpleSi { name: "", base: SiPrefix::Base } }
+            },
         },
         ChartVariants::Scatter => match charted_value {
             AnalysisProperty::CallbackDuration => AxisDescriptors {
@@ -225,7 +241,10 @@ pub const fn resolve_axis_descriptors(charted_value: &AnalysisProperty, chart_va
                 x: AxisDescriptor { label: "Nth Message", quantity: AxisQuantity::SimpleSi { name: "", base: SiPrefix::Base } }, 
                 y: AxisDescriptor { label: "Delay", quantity: AxisQuantity::Duration { base: DurationUnit::Nanosecond } }
             },
-            AnalysisProperty::MessagesLatency => todo!(),
+            AnalysisProperty::MessagesLatency => AxisDescriptors {
+                x: AxisDescriptor { label: "Nth Message", quantity: AxisQuantity::SimpleSi { name: "", base: SiPrefix::Base } },
+                y: AxisDescriptor { label: "Latency", quantity: AxisQuantity::Duration { base: DurationUnit::Nanosecond } }
+            },
         },
     }
 }

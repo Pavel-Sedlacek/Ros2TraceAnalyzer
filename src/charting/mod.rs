@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use plotters::{chart::{self, ChartBuilder, ChartContext}, coord::{CoordTranslate, ranged1d::ValueFormatter}, prelude::{BitMapBackend, Cartesian2d, DrawingBackend, IntoDrawingArea, Ranged}};
 use plotters_svg::SVGBackend;
 
-use crate::{argsv2::chart_args::{ChartRequest, ChartVariants}, charting::{axis_descriptor::{AxisBestFit, AxisDescriptors, resolve_axis_descriptors}, charts::{ChartData, histogram::HistogramChart, scatter::ScatterChart}, error::ChartConstructionError}, extract::ChartableData};
+use crate::{argsv2::chart_args::{ChartRequest, ChartVariants}, charting::{axis_descriptor::{AxisBestFit, AxisDescriptor, AxisDescriptors, resolve_axis_descriptors}, charts::{ChartData, histogram::HistogramChart, scatter::ScatterChart}, error::ChartConstructionError}, extract::ChartableData};
 
 mod error;
 mod charts;
@@ -19,11 +19,23 @@ pub fn render_chart(
         axis_best_fits: &[AxisBestFit; 2],
         axis_description: &AxisDescriptors
     ) -> Result<(), ChartConstructionError> {
+        fn format_axis(axis_description: &AxisDescriptor, best_fit: &AxisBestFit) -> String {
+            let unit_name = format!("{}{}", best_fit.target_notion(), axis_description.unit_name());
+
+            if !unit_name.is_empty() {
+                format!("{} [{}]", axis_description.label, unit_name)
+            } else {
+                axis_description.label.to_string()
+            }
+        }
+
         chart.configure_mesh()
-            .x_desc(axis_description.x.label)
-            .y_desc(axis_description.y.label)
+            .x_desc(format_axis(&axis_description.x, &axis_best_fits[0]))
+            .y_desc(format_axis(&axis_description.y, &axis_best_fits[1]))
             .x_label_formatter(&|v| format!("{:.2}", axis_best_fits[0].convert(*v) ).trim_end_matches('0').trim_end_matches('.').to_string() )
             .y_label_formatter(&|v| format!("{:.2}", axis_best_fits[1].convert(*v) ).trim_end_matches('0').trim_end_matches('.').to_string() )
+            .x_labels(9)
+            .max_light_lines(1)
             .draw()
             .map_err(|e| ChartConstructionError::InvalidCoordinateSystem(e.to_string()))?;
 
@@ -75,12 +87,14 @@ pub fn render_chart(
             .present()
             .map_err(|e| ChartConstructionError::DrawingError(e.to_string()))?;
     
+        drop(area);
+        
         Ok(())
     }
 
     let spacing = ChartSpacing {
-        margin: [64, 64, 64, 64],
-        label: [128, 0, 0, 64],
+        margin: [(chart_request.size / 10) as i32; 4],
+        label: [(chart_request.size / 10) as i32, 0, 0, (chart_request.size / 10) as i32],
     };
 
     let axis_description = resolve_axis_descriptors(&chart_request.property, &chart_request.plot);
