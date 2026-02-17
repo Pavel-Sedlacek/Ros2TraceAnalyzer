@@ -1,2 +1,9 @@
 **/target
 .vscode
+
+*.txt
+*.json
+*.dot
+*.sqlite
+
+**/*cache*
