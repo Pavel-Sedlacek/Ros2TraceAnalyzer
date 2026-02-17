@@ -79,7 +79,7 @@ fn run_charting(
 fn run_viewer(
     args: &ViewerArgs
 ) -> color_eyre::eyre::Result<()> {
-    let viewer = args.xdot.clone().unwrap_or("xdot".to_owned());
+    let viewer = args.xdot.clone().unwrap_or("xdotviewer/main.py".to_owned());
 
     let tracer = args.tracer_exec.clone().unwrap_or("Ros2TraceAnalyzer".to_owned());
 
@@ -87,15 +87,9 @@ fn run_viewer(
 
     let dotfile = args.dotfile.to_string_lossy().to_string();
     
-    let mut cmd = if args.xdot.is_none() {
-        std::process::Command::new(viewer)
-    } else {
-        let mut cmd = std::process::Command::new("python");
-        cmd.arg(viewer);
-        cmd
-    };
+    let mut cmd =std::process::Command::new("python");
     
-    cmd.args([dotfile, tracer, data_dir]);
+    cmd.args([viewer, dotfile, tracer, data_dir]);
 
     cmd.status()?;
 
