@@ -39,7 +39,7 @@ impl Args {
 
     pub fn into_analysis_args(self) -> analysis_args::AnalysisArgs {
         match self.command {
-            TracerCommand::Analyze(analysis_args) => analysis_args,
+            TracerCommand::Analyze(analysis_args) => *analysis_args,
             _ => {
                 panic!(
                     "Tried to extract Analysis arguments subcommand but {} subcommand was used",
@@ -54,7 +54,7 @@ impl Args {
 pub enum TracerCommand {
     /// Analyze a ROS 2 trace and generate graphs, JSON or bundle outputs
     #[display("analyze")]
-    Analyze(analysis_args::AnalysisArgs),
+    Analyze(Box<analysis_args::AnalysisArgs>),
 
     /// Render a chart of a specific property of a ROS 2 interface
     #[display("chart")]

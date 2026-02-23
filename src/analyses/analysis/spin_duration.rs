@@ -85,7 +85,7 @@ impl AnalysisOutput for SpinDuration {
         serde_json::to_writer(file, &self.export())
     }
 
-    fn get_binary_output(&self) -> impl serde::Serialize {
+    fn get_serializable_output(&self) -> impl serde::Serialize {
         self.export()
     }
 }

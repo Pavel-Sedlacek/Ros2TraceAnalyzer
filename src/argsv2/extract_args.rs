@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use clap::{Args, ValueEnum, ValueHint};
 use derive_more::Display;
 
-const DEFAULT_BUNDLE_NAME: &'static str = "binary_bundle.sqlite";
-const DEFAULT_OUTPUT_NAME: &'static str = "extract_data.json";
+const DEFAULT_BUNDLE_NAME: &str = "binary_bundle.sqlite";
+const DEFAULT_OUTPUT_NAME: &str = "extract_data.json";
 
 #[derive(Debug, Clone, Args)]
 pub struct ExtractArgs {
@@ -84,4 +84,17 @@ pub enum AnalysisProperty {
     /// Latency of a communication channel
     #[display("Latency")]
     MessagesLatency,
+}
+
+impl AnalysisProperty {
+    /// Table name in the binary data blob for this property
+    pub fn table_name(&self) -> &'static str {
+        match self {
+            AnalysisProperty::CallbackDuration => "callback_duration",
+            AnalysisProperty::ActivationsDelay => "activations_delay",
+            AnalysisProperty::PublicationsDelay => "publications_delay",
+            AnalysisProperty::MessagesDelay => "messages_delay",
+            AnalysisProperty::MessagesLatency => "messages_latency",
+        }
+    }
 }

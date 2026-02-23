@@ -77,9 +77,9 @@ pub struct ChartRequest {
 pub enum ChartOutputFormat {
     #[default]
     #[display("svg")]
-    SVG,
+    Svg,
     #[display("png")]
-    PNG,
+    Png,
 }
 
 #[derive(Debug, Display, ValueEnum, Clone, Copy)]

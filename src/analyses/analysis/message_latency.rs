@@ -252,7 +252,7 @@ impl AnalysisOutput for MessageLatency {
         serde_json::to_writer(file, &stats)
     }
 
-    fn get_binary_output(&self) -> impl Serialize {
+    fn get_serializable_output(&self) -> impl Serialize {
         self.calculate_stats()
             .into_iter()
             .map(Into::<MessageLatencyExport>::into)
@@ -278,8 +278,7 @@ impl From<MessageLatencyStats> for MessageLatencyExport {
                     get_node_name_from_weak(&v.get_weak()).unwrap_or("Unknown".to_string())
                 })
             })
-            .map(|v| v.to_string())
-            .unwrap_or("Unknown".into());
+            .map_or_else(|_| "Unknown".into(), |v| v.to_string());
 
         let source_node = value
             .publisher
@@ -290,10 +289,9 @@ impl From<MessageLatencyStats> for MessageLatencyExport {
                             get_node_name_from_weak(&v.get_weak()).unwrap_or("Unknown".to_string())
                         })
                     })
-                    .map(|v| v.to_string())
-                    .unwrap_or("Unknown".into())
+                    .map_or_else(|_| "Unknown".into(), |v| v.to_string())
             })
-            .unwrap_or("Unknown".into());
+            .unwrap_or_else(|| "Unknown".into());
 
         Self {
             topic: value.topic,

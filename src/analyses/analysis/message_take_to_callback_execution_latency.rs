@@ -100,7 +100,7 @@ impl AnalysisOutput for MessageTakeToCallbackLatency {
         serde_json::to_writer(file, &self.export_latencies())
     }
 
-    fn get_binary_output(&self) -> impl serde::Serialize {
+    fn get_serializable_output(&self) -> impl serde::Serialize {
         self.export_latencies()
     }
 }

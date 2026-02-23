@@ -63,6 +63,7 @@ Commands:
   analyze  Analyze a ROS 2 trace and generate graphs, JSON or bundle outputs
   chart    Render a chart of a specific property of a ROS 2 interface
   viewer   Start a .dot viewer capable of generating charts on demand
+  extract  Retreive data from SQL binary bundle for the specified node into JSON
   help     Print this message or the help of the given subcommand(s)
 
 Options:

@@ -286,10 +286,10 @@ impl AnalysisOutput for CallbackDuration {
         serde_json::to_writer(file, &records)
     }
 
-    fn get_binary_output(&self) -> impl Serialize {
+    fn get_serializable_output(&self) -> impl Serialize {
         self.get_records()
             .iter()
-            .map(|v| RecordExport::from(v))
+            .map(RecordExport::from)
             .collect::<Vec<_>>()
     }
 }
@@ -315,7 +315,7 @@ impl From<&Record> for RecordExport {
                     v => v,
                 },
                 match value.caller_type.as_str() {
-                    "Timer" => value.caller_param.to_string(),
+                    "Timer" => value.caller_param.clone(),
                     _ => format!("\"{}\"", value.caller_param.escape_default()),
                 }
             ),

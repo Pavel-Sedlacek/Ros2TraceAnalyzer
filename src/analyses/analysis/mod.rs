@@ -52,7 +52,7 @@ pub trait EventAnalysis {
 pub trait AnalysisOutput {
     fn write_json(&self, file: &mut BufWriter<File>) -> serde_json::Result<()>;
 
-    fn get_binary_output(&self) -> impl serde::Serialize;
+    fn get_serializable_output(&self) -> impl serde::Serialize;
 }
 
 pub trait AnalysisOutputExt: AnalysisOutput {
@@ -68,7 +68,7 @@ pub trait AnalysisOutputExt: AnalysisOutput {
         store: &BinarySQLStore,
         store_name: &str,
     ) -> Result<(), BinarySQLStoreError> {
-        let data = self.get_binary_output();
+        let data = self.get_serializable_output();
         store.write(store_name, data)
     }
 }

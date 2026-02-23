@@ -494,13 +494,13 @@ impl DependencyGraph {
         let timers = self.timer_nodes.iter().map(|(k, v)| {
             let n = k.0.lock().unwrap();
             ActivationDelayExport {
-                interface: format!("Timer({})", n.get_period().unwrap_or(0).to_string()),
+                interface: format!("Timer({})", n.get_period().unwrap_or(0)),
                 node: n
                     .get_node()
                     .map_or(WeakKnown::Unknown, |node_weak| {
                         get_node_name_from_weak(&node_weak.get_weak())
                     })
-                    .unwrap_or("".to_owned()),
+                    .unwrap_or(String::new()),
                 activation_delays: v.activation_delay.clone(),
             }
         });
@@ -518,7 +518,7 @@ impl DependencyGraph {
                             ),
                             v => v.to_string(),
                         },
-                        None => todo!(),
+                        None => String::new(),
                     }
                 ),
                 node: n
@@ -526,7 +526,7 @@ impl DependencyGraph {
                     .map_or(WeakKnown::Unknown, |node_weak| {
                         get_node_name_from_weak(&node_weak.get_weak())
                     })
-                    .unwrap_or("".to_owned()),
+                    .unwrap_or(String::new()),
                 activation_delays: v.activation_delay.clone(),
             }
         });
@@ -541,13 +541,13 @@ impl DependencyGraph {
                 let n = k.0.lock().unwrap();
 
                 PublicationDelayExport {
-                    interface: format!("Publisher({})", n.get_topic().to_string()),
+                    interface: format!("Publisher({})", n.get_topic()),
                     node: n
                         .get_node()
                         .map_or(WeakKnown::Unknown, |node_weak| {
                             get_node_name_from_weak(&node_weak.get_weak())
                         })
-                        .unwrap_or("".to_owned()),
+                        .unwrap_or(String::new()),
                     publication_delays: v.publication_delay.clone(),
                 }
             })
@@ -561,13 +561,13 @@ impl DependencyGraph {
                 let n = k.0.lock().unwrap();
 
                 MessagesDelayExport {
-                    interface: format!("Subscriber({})", n.get_topic().to_string()),
+                    interface: format!("Subscriber({})", n.get_topic()),
                     node: n
                         .get_node()
                         .map_or(WeakKnown::Unknown, |node_weak| {
                             get_node_name_from_weak(&node_weak.get_weak())
                         })
-                        .unwrap_or("".to_owned()),
+                        .unwrap_or(String::new()),
                     messages_delays: v.take_delay.clone(),
                 }
             })

@@ -6,6 +6,7 @@ use color_eyre::eyre::Context;
 use crate::analyses::analysis::AnalysisOutputExt;
 use crate::analyses::event_iterator::get_buf_writer_for_path;
 use crate::argsv2::analysis_args::AnalysisArgs;
+use crate::argsv2::extract_args::AnalysisProperty;
 use crate::utils::binary_sql_store::BinarySQLStore;
 
 pub mod analysis;
@@ -103,17 +104,26 @@ impl Analyses {
             let store = BinarySQLStore::new(path.to_path_buf())?;
 
             if let Some(a) = &self.message_latency_analysis {
-                a.write_to_binary(&store, "message_latencies")?;
+                a.write_to_binary(&store, AnalysisProperty::MessagesLatency.table_name())?;
             }
 
             if let Some(a) = &self.callback_analysis {
-                a.write_to_binary(&store, "callback_duration")?;
+                a.write_to_binary(&store, AnalysisProperty::CallbackDuration.table_name())?;
             }
 
             if let Some(a) = &self.dependency_graph {
-                store.write("activation_delays", a.activation_delays())?;
-                store.write("publication_delays", a.publication_delays())?;
-                store.write("message_delays", a.messages_delays())?;
+                store.write(
+                    AnalysisProperty::ActivationsDelay.table_name(),
+                    a.activation_delays(),
+                )?;
+                store.write(
+                    AnalysisProperty::PublicationsDelay.table_name(),
+                    a.publication_delays(),
+                )?;
+                store.write(
+                    AnalysisProperty::MessagesDelay.table_name(),
+                    a.messages_delays(),
+                )?;
             }
         }
 
