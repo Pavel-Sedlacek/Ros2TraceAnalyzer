@@ -95,8 +95,8 @@ pub struct AnalysisArgs {
     /// Flag whether to bundle all outputs into a single file or not
     ///
     /// Defaults to only `true`
-    #[arg(long, default_value = "true")]
-    bundle_output: bool,
+    #[arg(long)]
+    no_bundle_output: bool,
 
     /// Quantiles to compute for the latency and duration analysis.
     ///
@@ -269,7 +269,7 @@ impl AnalysisArgs {
     }
 
     pub fn bundle_output(&self) -> bool {
-        self.bundle_output
+        !self.no_bundle_output
     }
 
     pub fn quantiles(&self) -> &[Quantile] {
