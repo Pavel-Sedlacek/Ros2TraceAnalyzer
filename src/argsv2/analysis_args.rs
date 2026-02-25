@@ -3,11 +3,11 @@ use std::ffi::CString;
 use std::path::{Path, PathBuf};
 
 use clap::builder::ArgPredicate;
-use clap::{Parser, ValueEnum, ValueHint};
+use clap::{Parser, ValueHint};
 
 use crate::statistics::Quantile;
 
-mod filenames {
+pub(super) mod filenames {
     pub const DEPENDENCY_GRAPH: &str = "dependency_graph.dot";
     pub const MESSAGE_LATENCY: &str = "message_latency.json";
     pub const CALLBACK_DURATION: &str = "callback_duration.json";
@@ -18,7 +18,7 @@ mod filenames {
     pub const REAL_UTILIZATION: &str = "real_utilization.txt";
     pub const SPIN_DURATION: &str = "spin_duration.json";
 
-    pub const BINARY_BUNDLE: &str = "binary_bundle.sqlite";
+    pub const BINARY_BUNDLE: &str = "r2ta_results.sqlite";
 }
 
 #[derive(Debug, Clone, Parser)]
@@ -92,11 +92,11 @@ pub struct AnalysisArgs {
     #[arg(long, short = 'o', value_hint = ValueHint::DirPath)]
     out_dir: Option<PathBuf>,
 
-    /// Output formats to save the analyses as
+    /// Flag whether to bundle all outputs into a single file or not
     ///
-    /// Defaults to only 'bundle'
-    #[arg(long, short = 'f', value_delimiter = ',', default_values_t = vec![OutputFormat::Binary])]
-    output_format: Vec<OutputFormat>,
+    /// Defaults to only `true`
+    #[arg(long, default_value = "true")]
+    bundle_output: bool,
 
     /// Quantiles to compute for the latency and duration analysis.
     ///
@@ -268,8 +268,8 @@ impl AnalysisArgs {
             .map(|p| self.concatenate_with_out_path(p))
     }
 
-    pub fn output_format(&self) -> &[OutputFormat] {
-        &self.output_format
+    pub fn bundle_output(&self) -> bool {
+        self.bundle_output
     }
 
     pub fn quantiles(&self) -> &[Quantile] {
@@ -291,18 +291,6 @@ impl AnalysisArgs {
     pub const fn min_multiplier(&self) -> f64 {
         self.min_multiplier
     }
-}
-
-#[derive(Clone, Debug, derive_more::Display, PartialEq, ValueEnum)]
-pub enum OutputFormat {
-    #[display("binary")]
-    Binary,
-    #[display("json")]
-    Json,
-    #[display("dot")]
-    Dot,
-    #[display("txt")]
-    Text,
 }
 
 #[cfg(test)]

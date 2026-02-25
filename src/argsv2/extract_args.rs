@@ -1,22 +1,31 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use clap::{Args, ValueEnum, ValueHint};
 use derive_more::Display;
 
-const DEFAULT_BUNDLE_NAME: &str = "binary_bundle.sqlite";
-const DEFAULT_OUTPUT_NAME: &str = "extract_data.json";
+use crate::argsv2::analysis_args::filenames;
 
 #[derive(Debug, Clone, Args)]
 pub struct ExtractArgs {
-    /// Identifier of the element for which to extract the data
+    /// Identifies the element in the dependency graph for
+    /// which to extract the data
     ///
-    /// - For nodes (graphviz nodes) the namespace (ROS node), type (ROS interface) and parameters (ROS topic) need to be specified  
-    /// - For edges (graphviz edges) name (type + topic) of the source and target node should be provided
+    /// - Nodes (graph nodes) are identified by the ROS node,
+    ///   type (ROS interface) and parameters (ROS topic)
     ///
-    /// The expected format is URL encoded map
+    /// - For edges (graphviz edges) name (type + topic)
+    ///   of the source and target node should be provided
+    ///
+    /// The expected format is URL-encoded set of the required properties
+    ///
+    /// Example node id:
+    /// `interface=Callback(Subscriber(%22/clock%22)&node=/abc`
+    ///
+    /// Example edge id:
+    /// `source_node=/abc&target_node=/def&identifier=/some/topic`
     element_id: String,
 
-    /// The property to extract from the node
+    /// The property to extract from the node.
     property: AnalysisProperty,
 
     /// The input path, either a file of the data or a folder containing the default named file with the necessary data
@@ -24,8 +33,8 @@ pub struct ExtractArgs {
     input_path: Option<PathBuf>,
 
     /// The output path, either a folder to which the file will be generated or a file to write into
-    #[clap(long, short = 'o', value_name = "OUTPUT", value_hint = ValueHint::AnyPath)]
-    output_path: Option<PathBuf>,
+    #[clap(long, short = 'o', value_name = "OUTPUT", value_hint = ValueHint::FilePath)]
+    output_path: PathBuf,
 }
 
 impl ExtractArgs {
@@ -41,26 +50,19 @@ impl ExtractArgs {
         match &self.input_path {
             Some(p) => {
                 if p.is_dir() {
-                    p.join(DEFAULT_BUNDLE_NAME)
+                    p.join(filenames::BINARY_BUNDLE)
                 } else {
                     p.clone()
                 }
             }
-            None => std::env::current_dir().unwrap().join(DEFAULT_BUNDLE_NAME),
+            None => std::env::current_dir()
+                .unwrap()
+                .join(filenames::BINARY_BUNDLE),
         }
     }
 
-    pub fn output_path(&self) -> PathBuf {
-        match &self.output_path {
-            Some(p) => {
-                if p.is_dir() {
-                    p.join(DEFAULT_OUTPUT_NAME)
-                } else {
-                    p.clone()
-                }
-            }
-            None => std::env::current_dir().unwrap().join(DEFAULT_OUTPUT_NAME),
-        }
+    pub fn output_path(&self) -> &Path {
+        self.output_path.as_path()
     }
 }
 
@@ -68,33 +70,34 @@ impl ExtractArgs {
 pub enum AnalysisProperty {
     /// Callback execution durations
     #[display("Callback execution time")]
-    CallbackDuration,
+    CallbackDurations,
+
     /// Delays between callback or timer activations
     #[display("Delays between activations")]
-    ActivationsDelay,
+    ActivationDelays,
 
     /// Delays between publisher publications
     #[display("Delay between publication")]
-    PublicationsDelay,
+    PublicationDelays,
 
     /// Delays between subscriber messages
     #[display("Delay between")]
-    MessagesDelay,
+    MessageDelays,
 
     /// Latency of a communication channel
-    #[display("Latency")]
-    MessagesLatency,
+    #[display("Message latency")]
+    MessageLatencies,
 }
 
 impl AnalysisProperty {
     /// Table name in the binary data blob for this property
     pub fn table_name(&self) -> &'static str {
         match self {
-            AnalysisProperty::CallbackDuration => "callback_duration",
-            AnalysisProperty::ActivationsDelay => "activations_delay",
-            AnalysisProperty::PublicationsDelay => "publications_delay",
-            AnalysisProperty::MessagesDelay => "messages_delay",
-            AnalysisProperty::MessagesLatency => "messages_latency",
+            AnalysisProperty::CallbackDurations => "callback_duration",
+            AnalysisProperty::ActivationDelays => "activations_delay",
+            AnalysisProperty::PublicationDelays => "publications_delay",
+            AnalysisProperty::MessageDelays => "messages_delay",
+            AnalysisProperty::MessageLatencies => "messages_latency",
         }
     }
 }

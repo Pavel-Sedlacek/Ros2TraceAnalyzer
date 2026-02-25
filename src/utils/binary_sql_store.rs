@@ -1,3 +1,5 @@
+use std::path::Path;
+
 #[derive(thiserror::Error, Debug)]
 pub enum BinarySQLStoreError {
     #[error("An error occured in rusqlite {0}")]
@@ -15,7 +17,7 @@ pub struct BinarySQLStore {
 }
 
 impl BinarySQLStore {
-    pub fn new(sqlite_file: std::path::PathBuf) -> Result<BinarySQLStore, BinarySQLStoreError> {
+    pub fn new(sqlite_file: &Path) -> Result<BinarySQLStore, BinarySQLStoreError> {
         let brand_new = !sqlite_file.exists();
 
         let sqlite_connection =
@@ -25,7 +27,7 @@ impl BinarySQLStore {
             sqlite_connection
                 .execute(
                     "CREATE TABLE blobs(
-                        blob_name TEXT NOT NULL,
+                        blob_name TEXT PRIMARY KEY,
                         data BLOB
                     )",
                     (),
@@ -44,11 +46,13 @@ impl BinarySQLStore {
         let data_blob =
             postcard::to_allocvec(&data).map_err(BinarySQLStoreError::PostcardEncodeError)?;
 
+        println!("Inserting {}", name);
+
         self.sqlite_connection
             .execute(
                 "INSERT INTO blobs (blob_name, data) VALUES (?1, ?2)
                     ON CONFLICT (blob_name) DO UPDATE SET
-                        data = ECLUDED.data",
+                        data = EXCLUDED.data",
                 (name, data_blob),
             )
             .map_err(BinarySQLStoreError::SQLiteError)?;

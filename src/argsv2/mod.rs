@@ -64,7 +64,7 @@ pub enum TracerCommand {
     #[display("viewer")]
     Viewer(viewer_args::ViewerArgs),
 
-    /// Retreive data from SQL binary bundle for the specified node into JSON
+    /// Retreive data from bundled analysis results file into JSON format
     #[display("extract")]
     Extract(extract_args::ExtractArgs),
 }

@@ -55,7 +55,7 @@ fn run_extract(args: &ExtractArgs) -> color_eyre::eyre::Result<()> {
     let output_file = args.output_path();
 
     let (_extracted_property, data) =
-        extract::extract(source_file, args.element_id(), args.property())?;
+        extract::extract(&source_file, args.element_id(), args.property())?;
 
     data.export(output_file)?;
 

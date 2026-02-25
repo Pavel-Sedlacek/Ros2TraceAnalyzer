@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
@@ -15,17 +15,17 @@ use crate::argsv2::extract_args::AnalysisProperty;
 use crate::utils::binary_sql_store::{BinarySQLStore, BinarySQLStoreError};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Display)]
-#[display("{namespace}::{interface}")]
+#[display("{node}::{interface}")]
 pub struct RosInterfaceCompleteName {
     pub interface: String,
-    pub namespace: String,
+    pub node: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Display)]
-#[display("{source_namespace}-({topic})>{target_namespace}")]
+#[display("{source_node}-({topic})>{target_node}")]
 pub struct RosChannelCompleteName {
-    pub source_namespace: String,
-    pub target_namespace: String,
+    pub source_node: String,
+    pub target_node: String,
     pub topic: String,
 }
 
@@ -42,13 +42,13 @@ pub enum DataExtractionError {
 }
 
 pub fn extract(
-    input: PathBuf,
+    input: &Path,
     element_id: &str,
     property: &AnalysisProperty,
 ) -> color_eyre::eyre::Result<(String, ChartableData)> {
     let store = BinarySQLStore::new(input)?;
 
-    if let AnalysisProperty::MessagesLatency = property {
+    if let AnalysisProperty::MessageLatencies = property {
         let id: RosChannelCompleteName = serde_qs::from_str(element_id)?;
 
         let f = store
@@ -58,8 +58,8 @@ pub fn extract(
         return f
             .into_iter()
             .find(|l| {
-                l.source_node.eq(&id.source_namespace)
-                    && l.target_node.eq(&id.target_namespace)
+                l.source_node.eq(&id.source_node)
+                    && l.target_node.eq(&id.target_node)
                     && l.topic.eq(&id.topic)
             })
             .map(|l| ChartableData::I64(l.latencies))
@@ -70,29 +70,29 @@ pub fn extract(
 
     let id: RosInterfaceCompleteName = serde_qs::from_str(element_id)?;
     let v = match property {
-        AnalysisProperty::CallbackDuration => store
+        AnalysisProperty::CallbackDurations => store
             .read::<Vec<RecordExport>>(property.table_name())
             .map_err(DataExtractionError::SourceDataParseError)?
             .into_iter()
-            .find(|r| r.caller.eq(&id.interface) && r.node.eq(&id.namespace))
+            .find(|r| r.caller.eq(&id.interface) && r.node.eq(&id.node))
             .map(|v| ChartableData::I64(v.durations)),
-        AnalysisProperty::ActivationsDelay => store
+        AnalysisProperty::ActivationDelays => store
             .read::<Vec<ActivationDelayExport>>(property.table_name())
             .map_err(DataExtractionError::SourceDataParseError)?
             .into_iter()
-            .find(|a| a.interface.eq(&id.interface) && a.node.eq(&id.namespace))
+            .find(|a| a.interface.eq(&id.interface) && a.node.eq(&id.node))
             .map(|v| ChartableData::I64(v.activation_delays)),
-        AnalysisProperty::PublicationsDelay => store
+        AnalysisProperty::PublicationDelays => store
             .read::<Vec<PublicationDelayExport>>(property.table_name())
             .map_err(DataExtractionError::SourceDataParseError)?
             .into_iter()
-            .find(|a| a.interface.eq(&id.interface) && a.node.eq(&id.namespace))
+            .find(|a| a.interface.eq(&id.interface) && a.node.eq(&id.node))
             .map(|v| ChartableData::I64(v.publication_delays)),
-        AnalysisProperty::MessagesDelay => store
+        AnalysisProperty::MessageDelays => store
             .read::<Vec<MessagesDelayExport>>(property.table_name())
             .map_err(DataExtractionError::SourceDataParseError)?
             .into_iter()
-            .find(|a| a.interface.eq(&id.interface) && a.node.eq(&id.namespace))
+            .find(|a| a.interface.eq(&id.interface) && a.node.eq(&id.node))
             .map(|v| ChartableData::I64(v.messages_delays)),
         _ => {
             unreachable!()
@@ -105,7 +105,7 @@ pub fn extract(
 }
 
 impl ChartableData {
-    pub fn export(&self, output: PathBuf) -> color_eyre::eyre::Result<()> {
+    pub fn export(&self, output: &Path) -> color_eyre::eyre::Result<()> {
         let mut f = File::create(output)?;
 
         let data = match self {

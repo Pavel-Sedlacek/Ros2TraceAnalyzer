@@ -96,51 +96,44 @@ impl Analyses {
     }
 
     pub fn save_output(&self, args: &AnalysisArgs) -> color_eyre::eyre::Result<()> {
-        if args
-            .output_format()
-            .contains(&crate::argsv2::analysis_args::OutputFormat::Binary)
+        if let Some(path) = args.dependency_graph_path() {
+            let analysis = self.dependency_graph.as_ref().unwrap();
+            let dot_output =
+                analysis.display_as_dot(args.color(), args.thickness(), args.min_multiplier());
+            let mut writer = get_buf_writer_for_path(&path)?;
+            writer
+                .write_fmt(format_args!("{dot_output}"))
+                .wrap_err("Failed to write dependency graph")?;
+        }
+
+        if args.bundle_output()
             && let Some(path) = args.binary_bundle_path()
         {
-            let store = BinarySQLStore::new(path.to_path_buf())?;
+            let store = BinarySQLStore::new(&path)?;
 
             if let Some(a) = &self.message_latency_analysis {
-                a.write_to_binary(&store, AnalysisProperty::MessagesLatency.table_name())?;
+                a.write_to_binary(&store, AnalysisProperty::MessageLatencies.table_name())?;
             }
 
             if let Some(a) = &self.callback_analysis {
-                a.write_to_binary(&store, AnalysisProperty::CallbackDuration.table_name())?;
+                a.write_to_binary(&store, AnalysisProperty::CallbackDurations.table_name())?;
             }
 
             if let Some(a) = &self.dependency_graph {
                 store.write(
-                    AnalysisProperty::ActivationsDelay.table_name(),
+                    AnalysisProperty::ActivationDelays.table_name(),
                     a.activation_delays(),
                 )?;
                 store.write(
-                    AnalysisProperty::PublicationsDelay.table_name(),
+                    AnalysisProperty::PublicationDelays.table_name(),
                     a.publication_delays(),
                 )?;
                 store.write(
-                    AnalysisProperty::MessagesDelay.table_name(),
+                    AnalysisProperty::MessageDelays.table_name(),
                     a.messages_delays(),
                 )?;
             }
-        }
-
-        if args
-            .output_format()
-            .contains(&crate::argsv2::analysis_args::OutputFormat::Dot)
-        {
-            if let Some(path) = args.dependency_graph_path() {
-                let analysis = self.dependency_graph.as_ref().unwrap();
-                let dot_output =
-                    analysis.display_as_dot(args.color(), args.thickness(), args.min_multiplier());
-                let mut writer = get_buf_writer_for_path(&path)?;
-                writer
-                    .write_fmt(format_args!("{dot_output}"))
-                    .wrap_err("Failed to write dependency graph")?;
-            }
-
+        } else {
             if let Some(path) = args.callback_dependency_path() {
                 let analysis = self.callback_dependency_analysis.as_ref().unwrap();
 
@@ -148,14 +141,9 @@ impl Analyses {
                 let mut writer = get_buf_writer_for_path(&path)?;
                 writer
                     .write_fmt(format_args!("{}", graph.as_dot()))
-                    .wrap_err("Failed to write dependency graph")?;
+                    .wrap_err("Failed to write callback graph")?;
             }
-        }
 
-        if args
-            .output_format()
-            .contains(&crate::argsv2::analysis_args::OutputFormat::Json)
-        {
             if let Some(path) = args.message_latency_path() {
                 let analysis = self.message_latency_analysis.as_ref().unwrap();
                 analysis.write_json_to_output_dir(&path)?;
@@ -179,12 +167,7 @@ impl Analyses {
                     .write_json_to_output_dir(&path)
                     .wrap_err("Failed to write spin duration stats")?;
             }
-        }
 
-        if args
-            .output_format()
-            .contains(&crate::argsv2::analysis_args::OutputFormat::Text)
-        {
             if let Some(path) = args.callback_publications_path() {
                 let analysis = self.callback_dependency_analysis.as_ref().unwrap();
                 let analysis = analysis.get_publication_in_callback_analysis();

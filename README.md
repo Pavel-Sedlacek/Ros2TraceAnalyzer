@@ -55,7 +55,6 @@ Then you can use `Ros2TraceAnalyzer` subcommands to obtain various
 information from the trace.
 
 <!-- `$ cargo run -- -h | sed 's/ \[default:/\n          \[default:/g'` -->
-
 ```
 Usage: Ros2TraceAnalyzer [OPTIONS] <COMMAND>
 
@@ -63,7 +62,7 @@ Commands:
   analyze  Analyze a ROS 2 trace and generate graphs, JSON or bundle outputs
   chart    Render a chart of a specific property of a ROS 2 interface
   viewer   Start a .dot viewer capable of generating charts on demand
-  extract  Retreive data from SQL binary bundle for the specified node into JSON
+  extract  Retreive data from bundled analysis results file into JSON format
   help     Print this message or the help of the given subcommand(s)
 
 Options:
@@ -75,102 +74,64 @@ Options:
 ## Analyze
 This command analyzes the traces and saves relevant information for later use into JSON, TXT and DOT files. 
 
+<!-- `$ cargo run analyze -h | sed 's/ \[default:/\n          \[default:/g'` -->
 ```
 Analyze a ROS 2 trace and generate graphs, JSON or bundle outputs
 
 Usage: Ros2TraceAnalyzer analyze [OPTIONS] <TRACE_PATHS>...
 
 Arguments:
-  <TRACE_PATHS>...
-          Paths to directories to search for the trace to analyze
-          
-          All subdirectories are automatically searched too.
+  <TRACE_PATHS>...  Paths to directories to search for the trace to analyze
 
 Options:
       --all
           Run all analyses with their default output filenames
-          
-          The output `filename` can be changed by specific analysis option.
-          
-          This is enabled by default unless specific analysis option is provided.
-
   -v, --verbose...
           Increase logging verbosity
-
       --dependency-graph[=<FILENAME>]
           Construct a detailed dependency graph with timing statistics in DOT format
-
   -q, --quiet...
           Decrease logging verbosity
-
       --message-latency[=<FILENAME>]
           Analyze the latency of messages
-
       --callback-duration[=<FILENAME>]
           Analyze the callback duration and inter-arrival time
-
       --callback-publications[=<FILENAME>]
           Analyze the publications made by callbacks
-
       --callback-dependency[=<FILENAME>]
           Generate a callback dependency graph in DOT format
-
       --message-take-to-callback-latency[=<FILENAME>]
           Analyze the latency between message take and callback execution
-
       --utilization[=<FILENAME>]
           Analyze system utilization based on quantile callback durations
-
       --real-utilization[=<FILENAME>]
           Analyze system utilization based on real execution times
-
       --spin-duration[=<FILENAME>]
           Analyze the duration of executor spins
-
+      --binary-bundle [<FILENAME>]
+          Filename or directory of the binary bundle output
+          [default: r2ta_results.sqlite]
   -o, --out-dir <OUT_DIR>
           Directory to write output files
-          
-          If not provided, the current working directory is used.
-          
-          When analysis output filename is specified and it is not an absolute path, it is resolved relative to `OUT_DIR`.
-
+      --bundle-output
+          Flag whether to bundle all outputs into a single file or not
       --quantiles <QUANTILES>
-          Quantiles to compute for the latency and duration analysis.
-          
-          The quantiles must be in the range [0, 1].
-          
-          If not specified, the default quantiles are: 0 (minimum), 0.10, 0.5 (median), 0.90, 0.99, 1 (maximum)
-          
+          Quantiles to compute for the latency and duration analysis
           [default: 0,0.10,0.5,0.90,0.99,1]
-
       --utilization-quantile <QUANTILE>
           Callback duration quantile to use for utilization analysis
-          
           [default: 0.9]
-
       --thickness
           Set the edge thickness in dependency graph based on its median latency
-
       --color
           Color edge in dependency graph based on its median latency
-
       --min-multiplier <MIN_MULTIPLIER>
-          Minimum multiplier for edge coloring or thickness.
-          
-          Can be any positive number.
-          
-          The minimum multiplier is used to set the maximum value in gradients to be at least `MIN_MULTIPLIER` times the minimum value.
-          
-          The gradient range is exactly [minimum value, max(maximum value, minimum value * `MIN_MULTIPLIER`)].
-          
+          Minimum multiplier for edge coloring or thickness
           [default: 5.0]
-
       --exact-trace-path
           Only the directories specified by `TRACE_PATHS` are searched for traces, not their subdirectories
-
   -h, --help
-          Print help (see a summary with '-h')
-
+          Print help (see more with '--help')
 ```
 
 To gain **overview of timing in your application**, generate a
@@ -269,6 +230,7 @@ Thread 1737158 on steelpick has utilization  2.10334 %
 ## Chart
 This command is reserved for later use. It is intended for generating charts from analyzed traces.
 
+<!-- `$ cargo run chart -h | sed 's/ \[default:/\n          \[default:/g'` -->
 ```
 Render a chart of a specific property of a ROS 2 interface
 
@@ -280,55 +242,24 @@ Commands:
   help       Print this message or the help of the given subcommand(s)
 
 Options:
-  -n, --node <NODE>
-          Full name of the node to draw the chart for
-          
-          The name should include the namespace and node's name
-
-  -v, --verbose...
-          Increase logging verbosity
-
-  -i, --input-path <INPUT>
-          The input path, either a file of the data or a folder containing the default named file with the necessary data
-
-  -q, --quiet...
-          Decrease logging verbosity
-
-  -o, --output-path <OUTPUT>
-          The output path, either a folder to which the file will be generated or a file to write into
-
-  -c, --clean
-          Indicates whether the chart should be rendered from scratch.
-          
-          If not set, an existing chart will be reused only if it matches all specified parameters.
-
-      --value <VALUE>
-          The value to plot into the chart
-
-          Possible values:
-          - callback-duration:  Callback execution durations
-          - activations-delay:  Delays between callback or timer activations
-          - publications-delay: Delays between publisher publications
-          - messages-delay:     Delays between subscriber messages
-          - messages-latency:   Latency of a communication channel
-
-      --size <SIZE>
-          The size of the rendered image in pixels
-          
+  -n, --node <NODE>                    Full name of the node to draw the chart for
+  -v, --verbose...                     Increase logging verbosity
+  -i, --input-path <INPUT>             The input path, either a file of the data or a folder containing the default named file with the necessary data
+  -q, --quiet...                       Decrease logging verbosity
+  -o, --output-path <OUTPUT>           The output path, either a folder to which the file will be generated or a file to write into
+  -c, --clean                          Indicates whether the chart should be rendered from scratch
+      --value <VALUE>                  The value to plot into the chart [possible values: callback-duration, activations-delay, publications-delay, messages-delay, messages-latency]
+      --size <SIZE>                    The rectangular size of the rendered image in pixels
           [default: 800]
-
-      --output-format <OUTPUT_FORMAT>
-          The filetype (output format) the rendered image should be in
-          
-          [default: svg]
-          [possible values: svg, png]
-
-  -h, --help
-          Print help (see a summary with '-h')
+      --output-format <OUTPUT_FORMAT>  The filetype (output format) the rendered image should be in
+          [default: svg] [possible values: svg, png]
+  -h, --help                           Print help (see more with '--help')
 ```
 
 ## Viewer
 This command is reserved for later use. Builtin .dot graphs viewer.
+
+<!-- `$ cargo run viewer -h | sed 's/ \[default:/\n          \[default:/g'` -->
 ```
 Start a .dot viewer capable of generating charts on demand
 
@@ -354,14 +285,16 @@ Options:
 
 ## Extract
 This command retreives data from binary analysis output for the specified ROS interface or channel
-```
-Retreive data from SQL binary bundle for the specified node into JSON
 
-Usage: Ros2TraceAnalyzer extract [OPTIONS] <ELEMENT_ID> <PROPERTY>
+<!-- `$ cargo run extract -h | sed 's/ \[default:/\n          \[default:/g'` -->
+```
+Retreive data from bundled analysis results file into JSON format
+
+Usage: Ros2TraceAnalyzer extract [OPTIONS] --output-path <OUTPUT> <ELEMENT_ID> <PROPERTY>
 
 Arguments:
-  <ELEMENT_ID>  Identifier of the element for which to extract the data
-  <PROPERTY>    The property to extract from the node [possible values: callback-duration, activations-delay, publications-delay, messages-delay, messages-latency]
+  <ELEMENT_ID>  Identifies the element in the dependency graph for which to extract the data
+  <PROPERTY>    The property to extract from the node [possible values: callback-duration, activation-delays, publications-delay, messages-delay, messages-latency]
 
 Options:
   -i, --input-path <INPUT>    The input path, either a file of the data or a folder containing the default named file with the necessary data
