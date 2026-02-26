@@ -1,4 +1,7 @@
+use std::hash::{Hash, Hasher};
 use std::path::Path;
+
+use serde::Serialize;
 
 #[derive(thiserror::Error, Debug)]
 pub enum BinarySQLStoreError {
@@ -18,64 +21,94 @@ pub struct BinarySQLStore {
 
 impl BinarySQLStore {
     pub fn new(sqlite_file: &Path) -> Result<BinarySQLStore, BinarySQLStoreError> {
-        let brand_new = !sqlite_file.exists();
-
         let sqlite_connection =
             rusqlite::Connection::open(sqlite_file).map_err(BinarySQLStoreError::SQLiteError)?;
-
-        if brand_new {
-            sqlite_connection
-                .execute(
-                    "CREATE TABLE blobs(
-                        blob_name TEXT PRIMARY KEY,
-                        data BLOB
-                    )",
-                    (),
-                )
-                .map_err(BinarySQLStoreError::SQLiteError)?;
-        }
 
         Ok(BinarySQLStore { sqlite_connection })
     }
 
     pub fn write(
-        &self,
-        name: &str,
-        data: impl serde::Serialize,
+        &mut self,
+        table: &str,
+        data: Vec<impl StoreEntity>,
     ) -> Result<(), BinarySQLStoreError> {
-        let data_blob =
-            postcard::to_allocvec(&data).map_err(BinarySQLStoreError::PostcardEncodeError)?;
+        let data = data.iter().filter_map(|d| {
+            let mut h = std::hash::DefaultHasher::new();
+            d.id().hash(&mut h);
 
-        println!("Inserting {}", name);
+            let bin = postcard::to_allocvec(d.data())
+                .map_err(BinarySQLStoreError::PostcardEncodeError)
+                .ok();
+
+            bin.map(|b| (h.finish() as i64, b))
+        });
 
         self.sqlite_connection
             .execute(
-                "INSERT INTO blobs (blob_name, data) VALUES (?1, ?2)
-                    ON CONFLICT (blob_name) DO UPDATE SET
-                        data = EXCLUDED.data",
-                (name, data_blob),
+                &format!(
+                    "
+            CREATE TABLE IF NOT EXISTS {} (
+                id      INT PRIMARY KEY,
+                data    BLOB
+            );
+        ",
+                    table
+                ),
+                (),
             )
             .map_err(BinarySQLStoreError::SQLiteError)?;
 
+        let tx = self
+            .sqlite_connection
+            .transaction()
+            .map_err(BinarySQLStoreError::SQLiteError)?;
+
+        {
+            let mut query = tx
+                .prepare_cached(&format!(
+                    "
+                    INSERT INTO {} (id, data) VALUES (?1, ?2)
+                    ON CONFLICT (id) DO UPDATE SET
+                        data = EXCLUDED.data
+                ",
+                    table
+                ))
+                .map_err(BinarySQLStoreError::SQLiteError)?;
+
+            for entry in data {
+                query
+                    .execute(entry)
+                    .map_err(BinarySQLStoreError::SQLiteError)?;
+            }
+        }
+
+        tx.commit().map_err(BinarySQLStoreError::SQLiteError)?;
         Ok(())
     }
 
     pub fn read<T: for<'a> serde::Deserialize<'a>>(
         &self,
-        name: &str,
+        table: &str,
+        id: &str,
     ) -> Result<T, BinarySQLStoreError> {
-        let mut statement = self
+        let mut query = self
             .sqlite_connection
-            .prepare("SELECT data FROM blobs WHERE blob_name = ?1 LIMIT 1")
+            .prepare(&format!("SELECT data FROM {} WHERE id = ?1", table))
             .map_err(BinarySQLStoreError::SQLiteError)?;
 
-        let mut results = statement
-            .query_map((name,), |row| row.get::<_, Vec<u8>>(0))
+        let id = {
+            let mut h = std::hash::DefaultHasher::new();
+            id.hash(&mut h);
+            h.finish() as i64
+        };
+
+        let mut results = query
+            .query_map((id,), |row| row.get::<_, Vec<u8>>(0))
             .map_err(BinarySQLStoreError::SQLiteError)?;
 
         let data_blob = results
             .nth(0)
-            .ok_or_else(|| BinarySQLStoreError::NoSuchAnalysis(name.to_owned()))?
+            .ok_or_else(|| BinarySQLStoreError::NoSuchAnalysis(table.to_owned()))?
             .map_err(BinarySQLStoreError::SQLiteError)?;
 
         let data = postcard::from_bytes::<T>(&data_blob)
@@ -83,4 +116,9 @@ impl BinarySQLStore {
 
         Ok(data)
     }
+}
+
+pub trait StoreEntity {
+    fn id(&self) -> String;
+    fn data(&self) -> &impl Serialize;
 }

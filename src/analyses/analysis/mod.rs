@@ -52,7 +52,7 @@ pub trait EventAnalysis {
 pub trait AnalysisOutput {
     fn write_json(&self, file: &mut BufWriter<File>) -> serde_json::Result<()>;
 
-    fn get_serializable_output(&self) -> impl serde::Serialize;
+    fn get_store_entity_output(&self) -> Vec<impl crate::utils::binary_sql_store::StoreEntity>;
 }
 
 pub trait AnalysisOutputExt: AnalysisOutput {
@@ -65,10 +65,10 @@ pub trait AnalysisOutputExt: AnalysisOutput {
 
     fn write_to_binary(
         &self,
-        store: &BinarySQLStore,
+        store: &mut BinarySQLStore,
         store_name: &str,
     ) -> Result<(), BinarySQLStoreError> {
-        let data = self.get_serializable_output();
+        let data = self.get_store_entity_output();
         store.write(store_name, data)
     }
 }

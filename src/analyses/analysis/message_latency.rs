@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
 
 use crate::analyses::analysis::utils::DisplayDurationStats;
+use crate::extract::RosChannelCompleteName;
 use crate::model::display::get_node_name_from_weak;
 use crate::model::{Publisher, Subscriber, SubscriptionMessage};
 use crate::processed_events::{Event, FullEvent, ros2};
@@ -252,7 +253,7 @@ impl AnalysisOutput for MessageLatency {
         serde_json::to_writer(file, &stats)
     }
 
-    fn get_serializable_output(&self) -> impl Serialize {
+    fn get_store_entity_output(&self) -> Vec<impl crate::utils::binary_sql_store::StoreEntity> {
         self.calculate_stats()
             .into_iter()
             .map(Into::<MessageLatencyExport>::into)
@@ -266,6 +267,21 @@ pub struct MessageLatencyExport {
     pub source_node: String,
     pub target_node: String,
     pub latencies: Vec<i64>,
+}
+
+impl crate::utils::binary_sql_store::StoreEntity for MessageLatencyExport {
+    fn id(&self) -> String {
+        RosChannelCompleteName {
+            source_node: self.source_node.clone(),
+            target_node: self.target_node.clone(),
+            topic: self.topic.clone(),
+        }
+        .to_string()
+    }
+
+    fn data(&self) -> &impl Serialize {
+        &self.latencies
+    }
 }
 
 impl From<MessageLatencyStats> for MessageLatencyExport {

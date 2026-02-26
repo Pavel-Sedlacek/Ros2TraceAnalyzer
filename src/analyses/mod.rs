@@ -109,14 +109,14 @@ impl Analyses {
         if args.bundle_output()
             && let Some(path) = args.binary_bundle_path()
         {
-            let store = BinarySQLStore::new(&path)?;
+            let mut store = BinarySQLStore::new(&path)?;
 
             if let Some(a) = &self.message_latency_analysis {
-                a.write_to_binary(&store, AnalysisProperty::MessageLatencies.table_name())?;
+                a.write_to_binary(&mut store, AnalysisProperty::MessageLatencies.table_name())?;
             }
 
             if let Some(a) = &self.callback_analysis {
-                a.write_to_binary(&store, AnalysisProperty::CallbackDurations.table_name())?;
+                a.write_to_binary(&mut store, AnalysisProperty::CallbackDurations.table_name())?;
             }
 
             if let Some(a) = &self.dependency_graph {

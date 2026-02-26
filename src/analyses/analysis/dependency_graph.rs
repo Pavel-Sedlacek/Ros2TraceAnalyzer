@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::analysis::utils::DisplayDurationStats;
 use crate::events_common::Context;
+use crate::extract::RosInterfaceCompleteName;
 use crate::model::display::get_node_name_from_weak;
 use crate::model::{
     self, Callback, CallbackCaller, CallbackInstance, CallbackTrigger, Publisher, Service,
@@ -494,13 +495,15 @@ impl DependencyGraph {
         let timers = self.timer_nodes.iter().map(|(k, v)| {
             let n = k.0.lock().unwrap();
             ActivationDelayExport {
-                interface: format!("Timer({})", n.get_period().unwrap_or(0)),
-                node: n
-                    .get_node()
-                    .map_or(WeakKnown::Unknown, |node_weak| {
-                        get_node_name_from_weak(&node_weak.get_weak())
-                    })
-                    .unwrap_or(String::new()),
+                id: RosInterfaceCompleteName {
+                    interface: format!("Timer({})", n.get_period().unwrap_or(0)),
+                    node: n
+                        .get_node()
+                        .map_or(WeakKnown::Unknown, |node_weak| {
+                            get_node_name_from_weak(&node_weak.get_weak())
+                        })
+                        .unwrap_or(String::new()),
+                },
                 activation_delays: v.activation_delay.clone(),
             }
         });
@@ -508,25 +511,27 @@ impl DependencyGraph {
         let callbacks = self.callback_nodes.iter().map(|(k, v)| {
             let n = k.0.lock().unwrap();
             ActivationDelayExport {
-                interface: format!(
-                    "Callback({})",
-                    match n.get_caller() {
-                        Some(c) => match c {
-                            CallbackCaller::Subscription(arc_weak) => format!(
-                                "Subscriber(\"{}\")",
-                                arc_weak.get_arc().unwrap().lock().unwrap().get_topic()
-                            ),
-                            v => v.to_string(),
-                        },
-                        None => String::new(),
-                    }
-                ),
-                node: n
-                    .get_node()
-                    .map_or(WeakKnown::Unknown, |node_weak| {
-                        get_node_name_from_weak(&node_weak.get_weak())
-                    })
-                    .unwrap_or(String::new()),
+                id: RosInterfaceCompleteName {
+                    interface: format!(
+                        "Callback({})",
+                        match n.get_caller() {
+                            Some(c) => match c {
+                                CallbackCaller::Subscription(arc_weak) => format!(
+                                    "Subscriber(\"{}\")",
+                                    arc_weak.get_arc().unwrap().lock().unwrap().get_topic()
+                                ),
+                                v => v.to_string(),
+                            },
+                            None => String::new(),
+                        }
+                    ),
+                    node: n
+                        .get_node()
+                        .map_or(WeakKnown::Unknown, |node_weak| {
+                            get_node_name_from_weak(&node_weak.get_weak())
+                        })
+                        .unwrap_or(String::new()),
+                },
                 activation_delays: v.activation_delay.clone(),
             }
         });
@@ -541,13 +546,15 @@ impl DependencyGraph {
                 let n = k.0.lock().unwrap();
 
                 PublicationDelayExport {
-                    interface: format!("Publisher({})", n.get_topic()),
-                    node: n
-                        .get_node()
-                        .map_or(WeakKnown::Unknown, |node_weak| {
-                            get_node_name_from_weak(&node_weak.get_weak())
-                        })
-                        .unwrap_or(String::new()),
+                    id: RosInterfaceCompleteName {
+                        interface: format!("Publisher({})", n.get_topic()),
+                        node: n
+                            .get_node()
+                            .map_or(WeakKnown::Unknown, |node_weak| {
+                                get_node_name_from_weak(&node_weak.get_weak())
+                            })
+                            .unwrap_or(String::new()),
+                    },
                     publication_delays: v.publication_delay.clone(),
                 }
             })
@@ -561,13 +568,15 @@ impl DependencyGraph {
                 let n = k.0.lock().unwrap();
 
                 MessagesDelayExport {
-                    interface: format!("Subscriber({})", n.get_topic()),
-                    node: n
-                        .get_node()
-                        .map_or(WeakKnown::Unknown, |node_weak| {
-                            get_node_name_from_weak(&node_weak.get_weak())
-                        })
-                        .unwrap_or(String::new()),
+                    id: RosInterfaceCompleteName {
+                        interface: format!("Subscriber({})", n.get_topic()),
+                        node: n
+                            .get_node()
+                            .map_or(WeakKnown::Unknown, |node_weak| {
+                                get_node_name_from_weak(&node_weak.get_weak())
+                            })
+                            .unwrap_or(String::new()),
+                    },
                     messages_delays: v.take_delay.clone(),
                 }
             })
@@ -577,23 +586,50 @@ impl DependencyGraph {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct ActivationDelayExport {
-    pub interface: String,
-    pub node: String,
+    pub id: RosInterfaceCompleteName,
     pub activation_delays: Vec<i64>,
+}
+
+impl crate::utils::binary_sql_store::StoreEntity for ActivationDelayExport {
+    fn id(&self) -> String {
+        self.id.to_string()
+    }
+
+    fn data(&self) -> &impl serde::Serialize {
+        &self.activation_delays
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct PublicationDelayExport {
-    pub interface: String,
-    pub node: String,
+    pub id: RosInterfaceCompleteName,
     pub publication_delays: Vec<i64>,
+}
+
+impl crate::utils::binary_sql_store::StoreEntity for PublicationDelayExport {
+    fn id(&self) -> String {
+        self.id.to_string()
+    }
+
+    fn data(&self) -> &impl serde::Serialize {
+        &self.publication_delays
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug)]
 pub struct MessagesDelayExport {
-    pub interface: String,
-    pub node: String,
+    pub id: RosInterfaceCompleteName,
     pub messages_delays: Vec<i64>,
+}
+
+impl crate::utils::binary_sql_store::StoreEntity for MessagesDelayExport {
+    fn id(&self) -> String {
+        self.id.to_string()
+    }
+
+    fn data(&self) -> &impl serde::Serialize {
+        &self.messages_delays
+    }
 }
 
 impl EventAnalysis for DependencyGraph {
