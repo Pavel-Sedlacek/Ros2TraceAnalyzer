@@ -21,7 +21,7 @@ mod plots;
 
 pub fn render_plot(
     output: &mut Box<dyn std::io::Write>,
-    plotting_data: (String, PlottableData),
+    plotting_data: PlottableData,
     plot_request: &PlotRequest,
     output_format: PlotOutputFormat,
 ) -> Result<(), PlotConstructionCommonError> {
@@ -163,7 +163,7 @@ fn label_axis<B: DrawingBackend, T: Copy>(
 
 fn draw_into_canvas<B: DrawingBackend>(
     canvas: B,
-    data: (String, PlottableData),
+    data: PlottableData,
     variant: &PlotVariants,
     spacing: &PlotSpacing,
     include_title: bool,
@@ -184,12 +184,12 @@ fn draw_into_canvas<B: DrawingBackend>(
         .set_label_area_size(LabelAreaPosition::Bottom, spacing.label_margin[3]);
 
     if include_title {
-        plot.caption(&data.0, ("sans-serif", spacing.title_size));
+        plot.caption(&data.title, ("sans-serif", spacing.title_size));
     }
 
     match &variant {
         PlotVariants::Histogram(histogram_data) => {
-            let histogram = HistogramPlot::new(histogram_data, data.1, axis_description);
+            let histogram = HistogramPlot::new(histogram_data, &data.data, axis_description);
             label_axis(
                 histogram.draw_into(&mut plot)?,
                 histogram.scale_axis(),
@@ -198,7 +198,7 @@ fn draw_into_canvas<B: DrawingBackend>(
             )?;
         }
         PlotVariants::Scatter => {
-            let scatter = ScatterPlot::new(data.1, axis_description);
+            let scatter = ScatterPlot::new(&data.data, axis_description);
             label_axis(
                 scatter.draw_into(&mut plot)?,
                 scatter.scale_axis(),

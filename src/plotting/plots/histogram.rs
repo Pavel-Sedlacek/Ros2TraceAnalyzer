@@ -22,11 +22,9 @@ pub struct HistogramPlot {
 impl HistogramPlot {
     pub fn new(
         histogram_data: &HistogramData,
-        data: PlottableData,
+        data: &[i64],
         axis_descriptor: &AxisDescriptors,
     ) -> Self {
-        let PlottableData::I64(data) = data;
-
         // How many bins the data should be split into (this is how many bins will actually render)
         let bin_count = if let Some(bins) = histogram_data.bins
             && bins != 0
@@ -59,7 +57,7 @@ impl HistogramPlot {
             .checked_sub(1)
             .expect("bin_count must be at least 1");
 
-        for d in &data {
+        for d in data {
             let bin = usize::try_from((d - min) / bin_width)
                 .unwrap()
                 .min(last_idx);

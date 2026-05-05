@@ -28,15 +28,25 @@ pub struct RosChannelCompleteName {
     pub topic: String,
 }
 
-pub enum PlottableData {
-    I64(Vec<i64>),
+#[derive(Debug)]
+pub struct PlottableData {
+    pub title: String,
+    pub data: Vec<i64>,
 }
 
 impl PlottableData {
+    fn new(property: &AnalysisProperty, title: String, data: Vec<i64>) -> Self {
+        PlottableData {
+            title: format!("{} of: {}", property, title),
+            data,
+        }
+    }
+
     fn assert_valid(&self) -> Result<(), DataExtractionError> {
-        match self {
-            PlottableData::I64(items) if items.len() == 0 => Err(DataExtractionError::EmptyData),
-            _ => Ok(()),
+        if self.data.len() == 0 {
+            Err(DataExtractionError::EmptyData)
+        } else {
+            Ok(())
         }
     }
 }
@@ -70,7 +80,7 @@ pub fn extract_property(
     input: &Path,
     element_id: i64,
     property: &AnalysisProperty,
-) -> color_eyre::eyre::Result<(String, PlottableData)> {
+) -> color_eyre::eyre::Result<PlottableData> {
     let store = BinarySqlStore::open(input)?;
 
     let element_id = element_id as usize;
@@ -101,26 +111,26 @@ pub fn extract_property(
             let d = store
                 .get_by_id::<CallbackDurationExport>(element_id)
                 .map_err(DataExtractionError::SourceDataParseError)?;
-            (d.name.to_string(), PlottableData::I64(d.callback_durations))
+            PlottableData::new(property, d.name.to_string(), d.callback_durations)
         }
         AnalysisProperty::ActivationDelay => {
             let d = store
                 .get_by_id::<ActivationDelayExport>(element_id)
                 .map_err(DataExtractionError::SourceDataParseError)?;
-            (d.name.to_string(), PlottableData::I64(d.activation_delays))
+            PlottableData::new(property, d.name.to_string(), d.activation_delays)
         }
         AnalysisProperty::PublicationDelay => {
             let d = store
                 .get_by_id::<PublicationDelayExport>(element_id)
                 .map_err(DataExtractionError::SourceDataParseError)?;
-            (d.name.to_string(), PlottableData::I64(d.publication_delays))
+            PlottableData::new(property, d.name.to_string(), d.publication_delays)
         }
         AnalysisProperty::MessageDelay => {
             let d = store
                 .get_by_id::<MessagesDelayExport>(element_id)
                 .map_err(DataExtractionError::SourceDataParseError)?;
 
-            (d.name.to_string(), PlottableData::I64(d.messages_delays))
+            PlottableData::new(property, d.name.to_string(), d.messages_delays)
         }
         AnalysisProperty::MessageLatency => {
             let d = store
@@ -131,25 +141,20 @@ pub fn extract_property(
                     }
                     _ => e.into(),
                 })?;
-            (d.name.to_string(), PlottableData::I64(d.messages_latencies))
+            PlottableData::new(property, d.name.to_string(), d.messages_latencies)
         }
     };
 
-    let _ = plottable_data.1.assert_valid()?;
+    let _ = plottable_data.assert_valid()?;
 
-    Ok((
-        format!("{} of: {}", property, &plottable_data.0),
-        plottable_data.1,
-    ))
+    Ok(plottable_data)
 }
 
 impl PlottableData {
     pub fn export(&self, output: &mut impl Write) -> color_eyre::eyre::Result<()> {
-        let data = match self {
-            PlottableData::I64(items) => serde_json::to_string(&items)?,
-        };
+        let json_string = serde_json::to_string(&self.data)?;
 
-        writeln!(output, "{data}")?;
+        writeln!(output, "{json_string}")?;
 
         Ok(())
     }
